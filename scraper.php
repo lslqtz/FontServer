@@ -31,6 +31,7 @@ foreach ($fontfiles as $fontfile) {
 		if ($fontsInfo instanceof FontLib\TrueType\Collection) {
 			while ($fontsInfo->valid()) {
 				$font = $fontsInfo->current();
+				$font->parse();
 				for ($i = 0; $i < 10; $i++) {
 					if ($font->getFontName(3, $i, 2052) !== null) {
 						$fontsInfoArr[] = [$font->getFontName(3, $i, 2052), $font->getFontFullName(3, $i, 2052), $font->getFontPostscriptName(3, $i, 2052), $font->getFontSubfamily(3, $i, 2052)];
@@ -44,6 +45,7 @@ foreach ($fontfiles as $fontfile) {
 				$fontsInfo->next();
 			}
 		} else {
+			$fontsInfo->parse();
 			for ($i = 0; $i < 10; $i++) {
 				if ($fontsInfo->getFontName(3, $i,  2052) !== null) {
 					$fontsInfoArr[] = [$fontsInfo->getFontName(3, $i, 2052), $fontsInfo->getFontFullName(3, $i, 2052), $fontsInfo->getFontPostscriptName(3, $i, 2052), $fontsInfo->getFontSubfamily(3, $i, 2052)];

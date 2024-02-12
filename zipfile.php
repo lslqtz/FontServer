@@ -7,7 +7,7 @@
  * @package PhpMyAdmin
  * @see     Official ZIP file format: https://www.pkware.com/support/zip-app-note
  */
-class ZipFile{
+class ZipFile {
     /**
      * Whether to echo zip as it's built or return as string from -> file
      *
