@@ -1,10 +1,9 @@
 <?php
 require_once('config.php');
-require_once('mysql.php');
 require_once('ass.php');
 require_once('zipfile.php');
 require_once('vendor/autoload.php');
-ini_set('memory_limit', '128M');
+ini_set('memory_limit', MaxMemoryMB . 'M');
 
 function CheckSign(string $sign, int $uid, int $timestamp, string $filename, string $fileExt, string $filehash): ?string {
 	if ($sign !== sha1(SignKey . "Download/{$uid}-{$timestamp}-{$filename}.{$fileExt}-{$filehash}" . SignKey) || ($timestamp + DownloadExpireTime) < time()) {
@@ -12,15 +11,14 @@ function CheckSign(string $sign, int $uid, int $timestamp, string $filename, str
 	}
 	return $sign;
 }
-function AddFontDownloadHistory(int $uid, int $downloadID) {
-	global $db;
-	return $db->exec("INSERT INTO `download_history` (`user_id`, `download_id`) VALUES ({$uid}, {$downloadID}) ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP()");
-}
 if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !empty($_POST['file'])) {
 	$uid = intval($_GET['uid']);
 	$timestamp = intval($_GET['time']);
 	$fileInfo = pathinfo($_GET['filename']);
 	$filename = $fileInfo['filename'];
+	if (empty($filename)) {
+		dieHTML("Bad filename!\n");
+	}
 	$fileExt = $fileInfo['extension'];
 	if (!in_array($fileExt, ['ass', 'ssa', 'zip'])) {
 		dieHTML("Bad ext!\n");
@@ -32,139 +30,193 @@ if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !emp
 	if (($decodedUploadFile = base64_decode($_POST['file'])) === false) {
 		dieHTML("Bad file!\n");
 	}
-	$uploadTmpFilename = tempnam('/tmp', 'FontServer_');
+	if ((strlen($decodedUploadFile) / 1024 / 1024) > MaxFilesizeMB) {
+		dieHTML("Too large file!\n");
+	}
+	$uploadTmpFilename = tempnam(SysCacheDir, Title . '_');
 	$uploadFile = fopen($uploadTmpFilename, ($fileExt === 'zip' ? 'wb+' : 'w+'));
 	if ($uploadFile === false) {
 		fclose($uploadFile);
 		dieHTML("An error occurred while reading subtitles!\n");
 	}
 	fwrite($uploadFile, $decodedUploadFile);
+	unset($decodedUploadFile);
 	fseek($uploadFile, 0);
 
 	$fontArr = [];
 	$fontnameArr = [];
-	$matchedTypes = [];
-	$currentType = '';
-	$fontIndex = 1;
-    $foundFontIndex = false;
 	$isDownload = ((isset($_GET['download']) && $_GET['download'] == 1) ? true : false);
 	$isDownloadFont = (($isDownload && AllowDownloadFont && (isset($_GET['mode']) && $_GET['mode'] === 'font')) ? true : false);
-	$isDownloadSubtitle = (($isDownload && AllowDownloadSubtitle && (isset($_GET['mode']) && $_GET['mode'] === 'subtitle')) ? true : false);
+	$isDownloadSubtitle = (($isDownload && !$isDownloadFont && AllowDownloadSubtitle && (isset($_GET['mode']) && $_GET['mode'] === 'subtitle')) ? true : false);
+	if ($isDownload) {
+		$title = Title;
+	}
 
 	switch ($fileExt) {
 		case 'ass':
 		case 'ssa':
+			$currentType = '';
+			$fontIndex = 1;
+			$foundFontIndex = false;
+			$matchedTypes = [];
 			$subsetASSContent = ($isDownloadSubtitle ? '' : null);
-			$mapFontfileArr = ($isDownloadSubtitle ? [] : null);
 			while (($buffer = fgets($uploadFile)) !== false) {
-				if (count($fontArr) > MaxDownloadFontCount) {
+				if (count($fontnameArr) > MaxDownloadFontCount) {
 					break;
 				}
-				if (ParseSubtitleFont($uid, $buffer, $fontArr, $fontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent, $mapFontfileArr) === -1) {
-					break;
-				}
+				ParseSubtitleFont($buffer, $fontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
 			}
 			fclose($uploadFile);
-			$fontCount = count($fontArr);
-            if ($fontCount <= 0) {
-            	dieHTML("No font found!\n<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n");
-            } else if ($fontCount > MaxDownloadFontCount) {
-                dieHTML("Too many font!\n");
-            }
+			unlink($uploadTmpFilename);
+			if (count($fontnameArr) > MaxDownloadFontCount) {
+				dieHTML("Too many font!\n");
+			}
+			$fontArr = GetFont($fontnameArr);
+			ParseFontArr($uid, $fontArr, $subsetASSContent);
+			if (count($fontArr) <= 0) {
+				dieHTML("No font found!\n<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n");
+			}
 			if ($isDownloadFont) {
 				ob_end_clean();
 				header('Content-Type: application/zip');
-				header("Content-Disposition: attachment; filename=MDU-Fonts; filename*=utf-8''MDU-Fonts_" . rawurlencode($filename) . ".zip");
-				$tmpArr = [];
+				header("Content-Disposition: attachment; filename={$title}_Font; filename*=utf-8''[{$title}_Font] " . rawurlencode($filename) . ".zip");
 				$archive = new ZipFile();
 				$archive->setDoWrite();
-				foreach ($fontArr as $font) {
+				foreach ($fontArr as $key => &$font) {
 					if (!is_file(FontPath . '/' . $font['fontfile'])) {
+						unset($fontArr[$key]);
 						continue;
 					}
-					AddFontDownloadHistory($uid, $font['id']);
 					$archive->addFile(file_get_contents(FontPath . '/' . $font['fontfile']), $font['fontfile']);
+					unset($fontArr[$key]);
 					flush();
 				}
 				$archive->file();
 				die();
 			}
 			if ($isDownloadSubtitle) {
-				foreach ($mapFontfileArr as $mapFontfile => $fontnames) {
-					foreach ($fontnames as $fontname) {
-						$subsetASSContent = str_replace($fontname, $mapFontfile, $subsetASSContent);
-					}
-				}
-				header("Content-Disposition: attachment; filename=MDU-Subtitle; filename*=utf-8''MDU-Subtitle_" . rawurlencode($filename) . ".{$fileExt}");
+				header("Content-Disposition: attachment; filename={$title}_Subtitle; filename*=utf-8''[{$title}_Subtitle] " . rawurlencode($filename) . ".{$fileExt}");
 				die($subsetASSContent);
 			}
 			break;
 		case 'zip':
 			$subsetASSFiles = [];
 			$subtitleArchive = new \ZipArchive();
-            $subtitleArchive->open($uploadTmpFilename);
+			$subtitleArchive->open($uploadTmpFilename);
 			if ($subtitleArchive === false) {
-            	$subtitleArchive->close();
+				$subtitleArchive->close();
 				fclose($uploadFile);
+				unlink($uploadTmpFilename);
 				dieHTML("An error occurred while reading subtitle archive!\n");
 			}
-            for ($i = 0; $i < $subtitleArchive->numFiles; $i++) {
+			for ($i = 0; $i < $subtitleArchive->numFiles; $i++) {
+				if (count($fontnameArr) > MaxDownloadFontCount) {
+					break;
+				}
+				$currentType = '';
+				$fontIndex = 1;
+				$foundFontIndex = false;
+				$matchedTypes = [];
 				$subsetASSContent = ($isDownloadSubtitle ? '' : null);
-				$mapFontfileArr = ($isDownloadSubtitle ? [] : null);
-                $subtitleFileName = $subtitleArchive->getNameIndex($i);
-                $subtitleExt = pathinfo($subtitleFileName, PATHINFO_EXTENSION);
-                if ($subtitleExt !== 'ass' && $subtitleExt !== 'ssa') {
-                    continue;
-                }
-                $subtitleContentHandle = $subtitleArchive->getStream($subtitleFileName);
-                while (($buffer = fgets($subtitleContentHandle)) !== false) {
-					if (count($fontArr) > MaxDownloadFontCount) {
+				$tmpFontnameArr = [];
+				$subtitleFileName = $subtitleArchive->getNameIndex($i);
+				if (stripos($subtitleFileName, '__MACOSX') !== false) {
+					continue;
+				}
+				$fileInfo2 = pathinfo($subtitleFileName);
+				$filename2 = $fileInfo2['filename'];
+				if ($filename2[0] === '.' || !isset($fileInfo2['extension'])) {
+					continue;
+				}
+				$subtitleExt = $fileInfo2['extension'];
+				if ($subtitleExt !== 'ass' && $subtitleExt !== 'ssa') {
+					continue;
+				}
+				$subtitleContentHandle = $subtitleArchive->getStream($subtitleFileName);
+				while (($buffer = fgets($subtitleContentHandle)) !== false) {
+					if (count($tmpFontnameArr) > MaxDownloadFontCount) {
+						$fontnameArr = $tmpFontnameArr;
 						break 2;
 					}
-                    if (ParseSubtitleFont($uid, $buffer, $fontArr, $fontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent, $mapFontfileArr) === -1) {
-                		fclose($subtitleContentHandle);
-                    	break 2;
-                    }
-                }
-                fclose($subtitleContentHandle);
-                if ($isDownloadSubtitle) {
-					foreach ($mapFontfileArr as $mapFontfile => $fontnames) {
-						foreach ($fontnames as $fontname) {
-							$subsetASSContent = str_replace($fontname, $mapFontfile, $subsetASSContent);
-						}
-					}
-	                $subsetASSFiles["MDU-Subtitle_{$subtitleFileName}"] = $subsetASSContent;
-	            }
-            }
-            $subtitleArchive->close();
+					ParseSubtitleFont($buffer, $tmpFontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
+				}
+				fclose($subtitleContentHandle);
+				$fontnameArr = array_unique(array_merge($fontnameArr, $tmpFontnameArr), SORT_REGULAR);
+				if (count($fontnameArr) > MaxDownloadFontCount) {
+					break;
+				}
+				$subsetASSFiles[$subtitleFileName] = [$tmpFontnameArr, $subsetASSContent];
+			}
+			$subtitleArchive->close();
 			fclose($uploadFile);
-			$fontCount = count($fontArr);
-            if ($fontCount <= 0) {
-            	dieHTML("No font found!\n<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n");
-            } else if ($fontCount > MaxDownloadFontCount) {
-                dieHTML("Too many font!\n");
-            }
+			unlink($uploadTmpFilename);
+			unset($uploadFile, $uploadTmpFilename, $subtitleArchive, $subsetASSContent, $tmpFontnameArr);
+			if (count($fontnameArr) > MaxDownloadFontCount) {
+				dieHTML("Too many font!\n");
+			}
+			foreach ($subsetASSFiles as $filename2 => &$arr) {
+				if ((memory_get_peak_usage() / 1024 / 1024) > ceil(MaxMemoryMB / 1.5)) {
+					dieHTML("Unable to process this file! (Error: 1)\n");
+				}
+				$tmpSubsetASSContent = null;
+				$tmpFontArr = GetFont($arr[0]);
+				ParseFontArr($uid, $tmpFontArr, $tmpSubsetASSContent);
+				unset($arr[0]);
+				$fontArr = array_unique(array_merge($fontArr, $tmpFontArr), SORT_REGULAR);
+			}
+			unset($tmpFontArr);
+			if (count($fontArr) <= 0) {
+				dieHTML("No font found!\n<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n");
+			}
 			if ($isDownloadFont || $isDownloadSubtitle) {
 				$currentFileType = ($isDownloadFont ? 'Font' : 'Subtitle');
 				ob_end_clean();
-				header('Content-Type: application/zip');
-				header("Content-Disposition: attachment; filename=MDU-{$currentFileType}; filename*=utf-8''MDU-{$currentFileType}_" . rawurlencode($filename) . ".zip");
-				$tmpArr = [];
 				$archive = new ZipFile();
 				$archive->setDoWrite();
 				if ($isDownloadFont) {
-					foreach ($fontArr as $font) {
+					header('Content-Type: application/zip');
+					header("Content-Disposition: attachment; filename={$title}_{$currentFileType}; filename*=utf-8''[{$title}_{$currentFileType}] " . rawurlencode($filename) . ".zip");
+					foreach ($fontArr as $key => &$font) {
 						if (!is_file(FontPath . '/' . $font['fontfile'])) {
+							unset($fontArr[$key]);
 							continue;
 						}
-						AddFontDownloadHistory($uid, $font['id']);
 						$archive->addFile(file_get_contents(FontPath . '/' . $font['fontfile']), $font['fontfile']);
+						unset($fontArr[$key]);
 						flush();
 					}
 				} else {
-					foreach ($subsetASSFiles as $filename => $content) {
-						$archive->addFile($content, $filename);
-						flush();
+					if (!ProcessFontForEverySubtitle) {
+						$uniqueChar = [];
+						foreach ($subsetASSFiles as $filename2 => &$arr) {
+							if ((memory_get_peak_usage() / 1024 / 1024) > ceil(MaxMemoryMB / 1.5)) {
+								dieHTML("Unable to process this file! (Error: 2)\n");
+							}
+							GetUniqueChar($arr[1], $uniqueChar);
+						}
+						$subsetFontASSContent = '';
+						list($mapFontnameArr, $fontInfoArr) = ProcessFontArr($uid, $fontArr, $subsetFontASSContent, $uniqueChar);
+						unset($fontArr, $fontInfoArr);
+						header('Content-Type: application/zip');
+						header("Content-Disposition: attachment; filename={$title}_{$currentFileType}; filename*=utf-8''[{$title}_{$currentFileType}] " . rawurlencode($filename) . ".zip");
+						foreach ($subsetASSFiles as $filename2 => &$arr) {
+							ReplaceFontArr($mapFontnameArr, $arr[1], $subsetFontASSContent);
+							$archive->addFile($arr[1], $filename2);
+							unset($subsetASSFiles[$filename2]);
+							flush();
+						}
+					} else {
+						foreach ($subsetASSFiles as $filename2 => &$arr) {
+							$subsetFontASSContent = '';
+							ParseFontArr($uid, $fontArr, $arr[1]);
+						}
+						header('Content-Type: application/zip');
+						header("Content-Disposition: attachment; filename={$title}_{$currentFileType}; filename*=utf-8''[{$title}_{$currentFileType}] " . rawurlencode($filename) . ".zip");
+						foreach ($subsetASSFiles as $filename2 => &$arr) {
+							$archive->addFile($arr[1], $filename2);
+							unset($subsetASSFiles[$filename2]);
+							flush();
+						}
 					}
 				}
 				$archive->file();
@@ -189,7 +241,7 @@ if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !emp
 		echo "<p><a href=\"javascript:downloadSubtitle.submit();\">Download Subtitle!</a></p>\n";
 		echo "</form>\n";
 	}
-	echo "<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars($_GET['fontname'], ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
+	echo "<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
 	ShowTable($fontArr);
 	HTMLEnd();
 } else {

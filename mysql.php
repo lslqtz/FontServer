@@ -39,14 +39,16 @@ function Install() {
 		KEY `index_id` (`id`),
 		UNIQUE KEY `index_unique` (`fontname`, `fontfullname`, `fontpsname`, `fontsubfamily`) USING HASH
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-	$db->exec("CREATE TABLE `fonts_meta` (
-		`id` bigint(20) NOT NULL AUTO_INCREMENT,
-		`uploader` int(11) DEFAULT NULL,
-		`fontfile` varchar(255) DEFAULT NULL,
-		`fontsize` bigint(20) DEFAULT NULL,
-		`created_at` timestamp NULL DEFAULT current_timestamp(),
-		PRIMARY KEY (`id`),
-		UNIQUE KEY `index_unique` (`fontfile`)
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+	$db->exec("CREATE TABLE `fonts` (
+		`id` bigint NOT NULL,
+		`fontname` varchar(123) DEFAULT NULL,
+		`fontfullname` varchar(123) DEFAULT NULL,
+		`fontpsname` varchar(123) DEFAULT NULL,
+		`fontsubfamily` varchar(123) DEFAULT NULL,
+		KEY `index_id` (`id`),
+		KEY `index_fontname` (`fontname`),
+		KEY `index_fontfullname` (`fontfullname`),
+		KEY `index_fontpsname` (`fontpsname`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;");
 }
 ?>

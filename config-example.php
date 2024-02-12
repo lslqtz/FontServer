@@ -1,4 +1,5 @@
 <?php
+set_time_limit(120);
 define('Title', 'MDU-FontServer');
 define('DBAddress', 'mysql:host=localhost;dbname=FontServer');
 define('DBUsername', 'FontServer');
@@ -6,14 +7,18 @@ define('DBPassword', 'FontServer');
 define('DBPersistent', true);
 define('AllowDownloadFont', false);
 define('AllowDownloadSubtitle', true);
+define('ProcessFontForEverySubtitle', false);
+define('MaxMemoryMB', 1024);
+define('MaxFilesizeMB', 6);
 define('MinSearchLength', 2);
-define('MaxDownloadFontCount', 24);
+define('MaxDownloadFontCount', 48);
 define('MaxSearchFontCount', 100);
 define('SignKey', 'FontServer');
 define('CookieName', 'FontServer-Auth');
 define('LoginExpireTime', 3600);
 define('DownloadExpireTime', 300);
 define('FontPath', '../fonts');
+define('SysCacheDir', sys_get_temp_dir());
 
 function CheckLogin(string $sign, int $uid, int $timestamp): bool {
 	if ($sign !== sha1(SignKey . "Login/{$uid}-{$timestamp}" . SignKey) || ($timestamp + LoginExpireTime) < time()) {

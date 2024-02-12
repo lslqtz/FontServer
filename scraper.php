@@ -23,7 +23,9 @@ foreach ($fontfiles as $fontfile) {
 		LogStr('跳过错误文件', -1);
 		continue;
 	}
-	$fontFilename = $fontfile->getFilename();
+	$fontFileInfo = pathinfo($fontfile->getFilename());
+	$fontExt = strtolower($fontFileInfo['extension']);
+	$fontFilename = "{$fontFileInfo['filename']}.{$fontExt}";
 	$fontPath = (FontPath . '/' . $fontFilename);
 	$fontsInfoArr = [];
 	try {
@@ -32,7 +34,7 @@ foreach ($fontfiles as $fontfile) {
 			while ($fontsInfo->valid()) {
 				$font = $fontsInfo->current();
 				$font->parse();
-				for ($i = 0; $i < 10; $i++) {
+				for ($i = 0; $i < 5; $i++) {
 					if ($font->getFontName(3, $i, 2052) !== null) {
 						$fontsInfoArr[] = [$font->getFontName(3, $i, 2052), $font->getFontFullName(3, $i, 2052), $font->getFontPostscriptName(3, $i, 2052), $font->getFontSubfamily(3, $i, 2052)];
 					}
@@ -42,6 +44,7 @@ foreach ($fontfiles as $fontfile) {
 					if ($font->getFontName(3, $i, 1041) !== null) {
 						$fontsInfoArr[] = [$font->getFontName(3, $i, 1041), $font->getFontFullName(3, $i, 1041), $font->getFontPostscriptName(3, $i, 1041), $font->getFontSubfamily(3, $i, 1041)];
 					}
+				}
 				$fontsInfo->next();
 			}
 		} else {
@@ -62,6 +65,12 @@ foreach ($fontfiles as $fontfile) {
 	} catch (Throwable $e) {
 		LogStr("跳过错误字体: {$e->getMessage()}", -1);
 		continue;
+	}
+	foreach ($fontsInfoArr as $key => &$fontsInfo) {
+		if (DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3], true)) {
+			LogStr("跳过重复字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
+			unset($fontsInfoArr[$key]);
+		}
 	}
 	if (count($fontsInfoArr) <= 0) {
 		LogStr("跳过空字体", -1);
