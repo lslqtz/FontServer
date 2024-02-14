@@ -15,7 +15,7 @@ function SearchFonts(string $fontname): array {
 	} catch (Throwable $e) {
 		return [];
 	}
-	$result = $stmt->fetchAll();
+	$result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	$stmt->closeCursor();
 
 	return $result;

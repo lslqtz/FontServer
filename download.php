@@ -52,9 +52,6 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 	$isDownload = ((isset($_GET['download']) && $_GET['download'] == 1) ? true : false);
 	$isDownloadFont = (($isDownload && AllowDownloadFont && (isset($_GET['mode']) && $_GET['mode'] === 'font')) ? true : false);
 	$isDownloadSubtitle = (($isDownload && !$isDownloadFont && AllowDownloadSubtitle && (isset($_GET['mode']) && $_GET['mode'] === 'subtitle')) ? true : false);
-	if ($isDownload) {
-		$title = Title;
-	}
 
 	switch ($fileExt) {
 		case 'ass':
@@ -76,14 +73,17 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 				dieHTML("Too many font!\n");
 			}
 			$fontArr = GetFont($fontnameArr);
-			ParseFontArr($source, $uid, $fontArr, $subsetASSContent);
+			$fontInfoArr = null;
+			AutoProcessFontArr($source, $uid, $fontArr, $fontInfoArr, $subsetASSContent);
 			if (count($fontArr) <= 0) {
 				dieHTML("No font found!\n<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n");
 			}
 			if ($isDownloadFont) {
+				ob_implicit_flush(true);
 				ob_end_clean();
+				header('X-Accel-Buffering: no');
 				header('Content-Type: application/zip');
-				header("Content-Disposition: attachment; filename={$title}_Font; filename*=utf-8''[{$title}_Font] " . rawurlencode($filename) . ".zip");
+				header("Content-Disposition: attachment; filename=" . Title . "_Font; filename*=utf-8''[" . Title . "_Font] " . rawurlencode($filename) . ".zip");
 				$archive = new ZipFile();
 				$archive->setDoWrite();
 				foreach ($fontArr as $key => &$font) {
@@ -93,13 +93,13 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 					}
 					$archive->addFile(file_get_contents(FontPath . '/' . $font['fontfile']), $font['fontfile']);
 					unset($fontArr[$key]);
-					flush();
 				}
 				$archive->file();
 				die();
 			}
 			if ($isDownloadSubtitle) {
-				header("Content-Disposition: attachment; filename={$title}_Subtitle; filename*=utf-8''[{$title}_Subtitle] " . rawurlencode($filename) . ".{$fileExt}");
+				header('X-Accel-Buffering: no');
+				header("Content-Disposition: attachment; filename=" . Title . "_Subtitle; filename*=utf-8''[" . Title . "_Subtitle] " . rawurlencode($filename) . ".{$fileExt}");
 				die($subsetASSContent);
 			}
 			break;
@@ -158,28 +158,28 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 			if (count($fontnameArr) > MaxDownloadFontCount) {
 				dieHTML("Too many font!\n");
 			}
+			$subsetASSFontArr = [];
 			foreach ($subsetASSFiles as $filename2 => &$arr) {
 				if ((memory_get_peak_usage() / 1024 / 1024) > ceil(MaxMemoryMB / 1.5)) {
 					dieHTML("Unable to process this file! (Error: 1)\n");
 				}
-				$tmpSubsetASSContent = null;
-				$tmpFontArr = GetFont($arr[0]);
-				ParseFontArr($source, $uid, $tmpFontArr, $tmpSubsetASSContent);
+				$subsetASSFontArr[$filename2] = GetFont($arr[0]);
+				$fontArr = array_unique(array_merge($fontArr, $subsetASSFontArr[$filename2]), SORT_REGULAR);
 				unset($arr[0]);
-				$fontArr = array_unique(array_merge($fontArr, $tmpFontArr), SORT_REGULAR);
 			}
-			unset($tmpFontArr);
 			if (count($fontArr) <= 0) {
 				dieHTML("No font found!\n<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n");
 			}
 			if ($isDownloadFont || $isDownloadSubtitle) {
-				$currentFileType = ($isDownloadFont ? 'Font' : 'Subtitle');
+				ob_implicit_flush(true);
 				ob_end_clean();
+				$currentFileType = ($isDownloadFont ? 'Font' : 'Subtitle');
+				header('X-Accel-Buffering: no');
+				header('Content-Type: application/zip');
+				header("Content-Disposition: attachment; filename=" . Title . "_{$currentFileType}; filename*=utf-8''[" . Title . "_{$currentFileType}] " . rawurlencode($filename) . ".zip");
 				$archive = new ZipFile();
 				$archive->setDoWrite();
 				if ($isDownloadFont) {
-					header('Content-Type: application/zip');
-					header("Content-Disposition: attachment; filename={$title}_{$currentFileType}; filename*=utf-8''[{$title}_{$currentFileType}] " . rawurlencode($filename) . ".zip");
 					foreach ($fontArr as $key => &$font) {
 						if (!is_file(FontPath . '/' . $font['fontfile'])) {
 							unset($fontArr[$key]);
@@ -187,40 +187,33 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 						}
 						$archive->addFile(file_get_contents(FontPath . '/' . $font['fontfile']), $font['fontfile']);
 						unset($fontArr[$key]);
-						flush();
 					}
 				} else {
 					if (!ProcessFontForEverySubtitle) {
 						$uniqueChar = [];
+						// 预处理, 得到字幕所有字符的并集.
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
-							if ((memory_get_peak_usage() / 1024 / 1024) > ceil(MaxMemoryMB / 1.5)) {
-								dieHTML("Unable to process this file! (Error: 2)\n");
-							}
 							GetUniqueChar($arr[1], $uniqueChar);
 						}
-						$subsetFontASSContent = '';
-						list($mapFontnameArr, $fontInfoArr) = ProcessFontArr($source, $uid, $fontArr, $subsetFontASSContent, $uniqueChar);
-						unset($fontArr, $fontInfoArr);
-						header('Content-Type: application/zip');
-						header("Content-Disposition: attachment; filename={$title}_{$currentFileType}; filename*=utf-8''[{$title}_{$currentFileType}] " . rawurlencode($filename) . ".zip");
+						// 准备好所需的子集化字幕用附加字体信息.
+						$fontInfoArr = null;
+						$subsetFontASSContent = [];
+						$mapFontnameArr = ProcessFontArr($source, $uid, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
+						unset($fontArr, $uniqueChar);
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
 							ReplaceFontArr($mapFontnameArr, $arr[1], $subsetFontASSContent);
 							$archive->addFile($arr[1], $filename2);
 							unset($subsetASSFiles[$filename2]);
-							flush();
 						}
 					} else {
+						// 边输出边为每个字幕处理子集化.
+						$fontInfoArr = [];
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
-							$subsetFontASSContent = '';
-							ParseFontArr($source, $uid, $fontArr, $arr[1]);
-						}
-						header('Content-Type: application/zip');
-						header("Content-Disposition: attachment; filename={$title}_{$currentFileType}; filename*=utf-8''[{$title}_{$currentFileType}] " . rawurlencode($filename) . ".zip");
-						foreach ($subsetASSFiles as $filename2 => &$arr) {
+							AutoProcessFontArr($source, $uid, $subsetASSFontArr[$filename2], $fontInfoArr, $arr[1]);
 							$archive->addFile($arr[1], $filename2);
 							unset($subsetASSFiles[$filename2]);
-							flush();
 						}
+						CloseFontInfoArr($fontInfoArr);
 					}
 				}
 				$archive->file();

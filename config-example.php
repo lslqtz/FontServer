@@ -7,10 +7,11 @@ define('DBPassword', 'FontServer');
 define('DBPersistent', true);
 define('AllowDownloadFont', false);
 define('AllowDownloadSubtitle', true);
-define('ProcessFontForEverySubtitle', false);
+define('ProcessFontForEverySubtitle', true); // false: High memory consumption, true: High performance consumption.
 define('MaxMemoryMB', 1024);
 define('MaxFilesizeMB', 6);
 define('MinSearchLength', 2);
+define('MaxCacheFontCount', 6);
 define('MaxDownloadFontCount', 48);
 define('MaxSearchFontCount', 100);
 define('SignKey', array('FontServer' => 'FontServer'));
@@ -87,7 +88,7 @@ function ShowTable(array $fontsResult, bool $foundFont = true) {
 		echo "<td>{$fontResult['fontfullname']}</td>\n";
 		echo "<td>{$fontResult['fontpsname']}</td>\n";
 		echo "<td>{$fontResult['fontsubfamily']}</td>\n";
-		echo "<td>{$fontResult['fontsize']}</td>\n";
+		echo "<td>" . round(($fontResult['fontsize'] / 1024 / 1024), 2) . " MB</td>\n";
 		echo "<td>{$fontResult['created_at']}</td>\n";
 		echo "</tr>\n";
 	}

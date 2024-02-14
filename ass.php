@@ -27,19 +27,27 @@ function AddFontDownloadHistory(string $source, int $uid, int $downloadID) {
 function GetUniqueChar(string &$subsetASSContent, array &$uniqueChar) {
 	$uniqueChar = array_unique(array_merge($uniqueChar, preg_split('//u', $subsetASSContent, -1, PREG_SPLIT_NO_EMPTY)), SORT_REGULAR);
 }
-function ReplaceFontArr(array &$mapFontnameArr, string &$subsetASSContent, string &$subsetFontASSContent) {
-	if (!empty($subsetFontASSContent)) {
+function GetFontname(string $fontfile) {
+	return pathinfo($fontfile, PATHINFO_FILENAME);
+}
+function ReplaceFontArr(array &$mapFontnameArr, string &$subsetASSContent, array &$subsetFontASSContent) {
+	if (count($subsetFontASSContent) > 0) {
 		$mapFontnameArr = array_filter($mapFontnameArr);
 		uksort($mapFontnameArr, function ($a, $b) {
 			return (strlen($b) - strlen($a));
 		});
-		foreach ($mapFontnameArr as $mapFontname => &$fontfile) {
-			$subsetASSContent = str_ireplace($mapFontname, $fontfile, $subsetASSContent);
+		foreach ($mapFontnameArr as $mapFontname => &$fontname) {
+			$subsetASSContent = str_ireplace($mapFontname, $fontname, $subsetASSContent);
 		}
-		$subsetASSContent .= "\n[Font]\n{$subsetFontASSContent}";
+		$subsetASSContent .= "\n[Font]\n";
+		foreach ($subsetFontASSContent as $mapFontfile => $fontASSContent) {
+			if (in_array(GetFontname($mapFontfile), $mapFontnameArr)) {
+				$subsetASSContent .= "fontname: {$mapFontfile}\n{$fontASSContent}\n";
+			}
+		}
 	}
 }
-function GetSubsetFontASSContent(?FontLib\TrueType\File $fontInfo, string $mapFontname, string $mapFontfile, string &$subsetFontASSContent, array &$uniqueChar) {
+function GetSubsetFontASSContent(?FontLib\TrueType\File $fontInfo, string $mapFontname, string $mapFontfile, array &$subsetFontASSContent, array &$uniqueChar) {
 	if ($fontInfo === null) {
 		return;
 	}
@@ -82,63 +90,68 @@ function GetSubsetFontASSContent(?FontLib\TrueType\File $fontInfo, string $mapFo
 	} else {
 		$subFontTmpFile = null;
 	}
+	$fontInfo->revert();
 	if ($subFontTmpFile !== null) {
-		$subsetFontASSContent .= "fontname: {$mapFontfile}\n";
-		$subsetFontASSContent .= UUEncode_ASS($subFontTmpFile, true);
-		$subsetFontASSContent .= "\n";
+		$subsetFontASSContent[$mapFontfile] = UUEncode_ASS($subFontTmpFile, true);
 		unlink($subFontTmpFile);
 	}
 	unset($uniqueCharStr);
 }
-function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfile, array &$mapFontnameArr, array &$fontInfoArr, ?string &$subsetFontASSContent, ?array &$uniqueChar): int {
+function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfile, array &$mapFontnameArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar): int {
 	if (!is_file(FontPath . '/' . $font['fontfile'])) {
 		return -2;
 	}
-	$mapFontfilename = pathinfo($mapFontfile, PATHINFO_FILENAME);
+	$mapFontname = GetFontname($mapFontfile);
 	foreach (explode("\n", $font['fontfullname']) as &$fontfullname2) {
 		if (isset($mapFontnameArr[$fontfullname2])) {
-			return -1;
+			continue;
 		}
-		$mapFontnameArr[$fontfullname2] = $mapFontfilename;
+		$mapFontnameArr[$fontfullname2] = $mapFontname;
 	}
 	foreach (explode("\n", $font['fontpsname']) as &$fontpsname2) {
 		if (isset($mapFontnameArr[$fontpsname2])) {
-			return -1;
+			continue;
 		}
-		$mapFontnameArr[$fontpsname2] = $mapFontfilename;
+		$mapFontnameArr[$fontpsname2] = $mapFontname;
 	}
-	if (!isset($fontInfoArr[$font['fontfile']])) {
-		AddFontDownloadHistory($source, $uid, $font['id']);
+	if ($fontInfoArr === null || !isset($fontInfoArr[$font['fontfile']])) {
 		$fontInfo = GetMatchedFontInfo($font['fontfile'], $mapFontnameArr);
-		$fontInfoArr[$font['fontfile']] = &$fontInfo;
+		if (MaxCacheFontCount > 0 && $fontInfoArr !== null && $fontInfo !== null) {
+			$fontInfoArr[$font['fontfile']] = &$fontInfo;
+		}
 	} else {
 		$fontInfo = $fontInfoArr[$font['fontfile']];
 	}
+	if ($fontInfoArr !== null && count($fontInfoArr) > MaxCacheFontCount) {
+		CloseFontInfo(array_shift($fontInfoArr));
+	}
 	if ($subsetFontASSContent !== null) {
-		GetSubsetFontASSContent($fontInfo, $mapFontfilename, $mapFontfile, $subsetFontASSContent, $uniqueChar);
-		CloseFontInfo($fontInfo);
+		GetSubsetFontASSContent($fontInfo, $mapFontname, $mapFontfile, $subsetFontASSContent, $uniqueChar);
+		if ($fontInfoArr === null) {
+			CloseFontInfo($fontInfo);
+		}
 	}
 	return 0;
 }
-function ProcessFontArr(string $source, int $uid, array &$fontArr, ?string &$subsetFontASSContent, ?array &$uniqueChar): array {
+function ProcessFontArr(string $source, int $uid, array &$fontArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar): array {
 	if (count($fontArr) > 0) {
 		$mapFontnameArr = [];
-		$fontInfoArr = [];
 		foreach ($fontArr as &$font) {
+			AddFontDownloadHistory($source, $uid, $font['id']);
 			$fontExt = pathinfo($font['fontfile'], PATHINFO_EXTENSION);
 			$mapFontfile = GenerateRandomString(8) . ".{$fontExt}";
 			ProcessFont($source, $uid, $font, $mapFontfile, $mapFontnameArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
 		}
-		return [$mapFontnameArr, $fontInfoArr];
+		return $mapFontnameArr;
 	}
 	return [];
 }
-function ParseFontArr(string $source, int $uid, array &$fontArr, ?string &$subsetASSContent) {
+function AutoProcessFontArr(string $source, int $uid, array &$fontArr, ?array &$fontInfoArr, ?string &$subsetASSContent) {
 	if ($subsetASSContent !== null) {
 		$uniqueChar = [];
-		$subsetFontASSContent = '';
+		$subsetFontASSContent = [];
 		GetUniqueChar($subsetASSContent, $uniqueChar);
-		list($mapFontnameArr, $fontInfoArr) = ProcessFontArr($source, $uid, $fontArr, $subsetFontASSContent, $uniqueChar);
+		$mapFontnameArr = ProcessFontArr($source, $uid, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
 		ReplaceFontArr($mapFontnameArr, $subsetASSContent, $subsetFontASSContent);
 	}
 }
