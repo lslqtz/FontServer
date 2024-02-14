@@ -5,18 +5,19 @@ require_once('zipfile.php');
 require_once('vendor/autoload.php');
 ini_set('memory_limit', MaxMemoryMB . 'M');
 
-function CheckSign(string $source, int $uid, int $timestamp, string $sign, string $filename, string $fileExt, string $filehash): ?string {
-	if ($sign !== sha1(SignKey[$source] . "Download/{$source}_{$uid}-{$timestamp}-{$filename}.{$fileExt}-{$filehash}" . SignKey[$source]) || ($timestamp + DownloadExpireTime) < time()) {
+function CheckSign(string $source, int $uid, int $torrentID, int $timestamp, string $sign, string $filename, string $fileExt, string $filehash): ?string {
+	if ($sign !== sha1(SignKey[$source] . "Download/{$source}_{$uid}-{$torrentID}-{$timestamp}-{$filename}.{$fileExt}-{$filehash}" . SignKey[$source]) || ($timestamp + DownloadExpireTime) < time()) {
 		return null;
 	}
 	return $sign;
 }
-if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['filename']) && !empty($_POST['file'])) {
+if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_GET['sign'], $_GET['filename']) && !empty($_POST['file'])) {
 	if (!isset(SignKey[$_GET['source']])) {
 		dieHTML("Bad source!\n");
 	}
 	$source = $_GET['source'];
 	$uid = intval($_GET['uid']);
+	$torrentID = intval($_GET['torrent_id']);
 	$timestamp = intval($_GET['time']);
 	$fileInfo = pathinfo($_GET['filename']);
 	$filename = $fileInfo['filename'];
@@ -27,7 +28,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 	if (!in_array($fileExt, ['ass', 'ssa', 'zip'])) {
 		dieHTML("Bad ext!\n");
 	}
-	$sign = CheckSign($source, $uid, $timestamp, $_GET['sign'], $filename, $fileExt, sha1($_POST['file']));
+	$sign = CheckSign($source, $uid, $torrentID, $timestamp, $_GET['sign'], $filename, $fileExt, sha1($_POST['file']));
 	if ($sign === null) {
 		dieHTML("Bad sign!\n");
 	}
@@ -74,7 +75,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 			}
 			$fontArr = GetFont($fontnameArr);
 			$fontInfoArr = null;
-			AutoProcessFontArr($source, $uid, $fontArr, $fontInfoArr, $subsetASSContent);
+			AutoProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetASSContent);
 			if (count($fontArr) <= 0) {
 				dieHTML("No font found!\n<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n");
 			}
@@ -198,7 +199,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 						// 准备好所需的子集化字幕用附加字体信息.
 						$fontInfoArr = null;
 						$subsetFontASSContent = [];
-						$mapFontnameArr = ProcessFontArr($source, $uid, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
+						$mapFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
 						unset($fontArr, $uniqueChar);
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
 							ReplaceFontArr($mapFontnameArr, $arr[1], $subsetFontASSContent);
@@ -209,7 +210,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['fi
 						// 边输出边为每个字幕处理子集化.
 						$fontInfoArr = [];
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
-							AutoProcessFontArr($source, $uid, $subsetASSFontArr[$filename2], $fontInfoArr, $arr[1]);
+							AutoProcessFontArr($source, $uid, $torrentID, $subsetASSFontArr[$filename2], $fontInfoArr, $arr[1]);
 							$archive->addFile($arr[1], $filename2);
 							unset($subsetASSFiles[$filename2]);
 						}

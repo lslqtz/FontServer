@@ -11,11 +11,11 @@ function GenerateRandomString($length) {
 	}
 	return $randomString;
 }
-function AddFontDownloadHistory(string $source, int $uid, int $downloadID) {
+function AddFontDownloadHistory(string $source, int $uid, int $torrentID, int $downloadID) {
 	global $db;
-	$stmt = $db->prepare("INSERT INTO `download_history` (`source`, `user_id`, `download_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP()");
+	$stmt = $db->prepare("INSERT INTO `download_history` (`source`, `user_id`, `torrent_id`, `download_id`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `source` = VALUES(`source`), `user_id` = VALUES(`user_id`), `torrent_id` = VALUES(`torrent_id`), `download_id` = VALUES(`download_id`), `updated_at` = CURRENT_TIMESTAMP()");
 	try {
-		if (!$stmt->execute([$source, $uid, $downloadID])) {
+		if (!$stmt->execute([$source, $uid, $torrentID, $downloadID])) {
 			return false;
 		}
 	} catch (Throwable $e) {
@@ -133,25 +133,26 @@ function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfil
 	}
 	return 0;
 }
-function ProcessFontArr(string $source, int $uid, array &$fontArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar): array {
+function ProcessFontArr(string $source, int $uid, int $torrentID, array &$fontArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar): array {
 	if (count($fontArr) > 0) {
 		$mapFontnameArr = [];
 		foreach ($fontArr as &$font) {
-			AddFontDownloadHistory($source, $uid, $font['id']);
 			$fontExt = pathinfo($font['fontfile'], PATHINFO_EXTENSION);
 			$mapFontfile = GenerateRandomString(8) . ".{$fontExt}";
-			ProcessFont($source, $uid, $font, $mapFontfile, $mapFontnameArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
+			if (ProcessFont($source, $uid, $font, $mapFontfile, $mapFontnameArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar) === 0) {
+				AddFontDownloadHistory($source, $uid, $torrentID, $font['id']);
+			}
 		}
 		return $mapFontnameArr;
 	}
 	return [];
 }
-function AutoProcessFontArr(string $source, int $uid, array &$fontArr, ?array &$fontInfoArr, ?string &$subsetASSContent) {
+function AutoProcessFontArr(string $source, int $uid, int $torrentID, array &$fontArr, ?array &$fontInfoArr, ?string &$subsetASSContent) {
 	if ($subsetASSContent !== null) {
 		$uniqueChar = [];
 		$subsetFontASSContent = [];
 		GetUniqueChar($subsetASSContent, $uniqueChar);
-		$mapFontnameArr = ProcessFontArr($source, $uid, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
+		$mapFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
 		ReplaceFontArr($mapFontnameArr, $subsetASSContent, $subsetFontASSContent);
 	}
 }
