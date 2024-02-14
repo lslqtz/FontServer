@@ -11,9 +11,18 @@ function GenerateRandomString($length) {
 	}
 	return $randomString;
 }
-function AddFontDownloadHistory(int $uid, int $downloadID) {
+function AddFontDownloadHistory(string $source, int $uid, int $downloadID) {
 	global $db;
-	return $db->exec("INSERT INTO `download_history` (`user_id`, `download_id`) VALUES ({$uid}, {$downloadID}) ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP()");
+	$stmt = $db->prepare("INSERT INTO `download_history` (`source`, `user_id`, `download_id`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP()");
+	try {
+		if (!$stmt->execute([$source, $uid, $downloadID])) {
+			return false;
+		}
+	} catch (Throwable $e) {
+		return false;
+	}
+	$stmt->closeCursor();
+	return true;
 }
 function GetUniqueChar(string &$subsetASSContent, array &$uniqueChar) {
 	$uniqueChar = array_unique(array_merge($uniqueChar, preg_split('//u', $subsetASSContent, -1, PREG_SPLIT_NO_EMPTY)), SORT_REGULAR);
@@ -81,7 +90,7 @@ function GetSubsetFontASSContent(?FontLib\TrueType\File $fontInfo, string $mapFo
 	}
 	unset($uniqueCharStr);
 }
-function ProcessFont(int $uid, array &$font, string &$mapFontfile, array &$mapFontnameArr, array &$fontInfoArr, ?string &$subsetFontASSContent, ?array &$uniqueChar): int {
+function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfile, array &$mapFontnameArr, array &$fontInfoArr, ?string &$subsetFontASSContent, ?array &$uniqueChar): int {
 	if (!is_file(FontPath . '/' . $font['fontfile'])) {
 		return -2;
 	}
@@ -99,7 +108,7 @@ function ProcessFont(int $uid, array &$font, string &$mapFontfile, array &$mapFo
 		$mapFontnameArr[$fontpsname2] = $mapFontfilename;
 	}
 	if (!isset($fontInfoArr[$font['fontfile']])) {
-		AddFontDownloadHistory($uid, $font['id']);
+		AddFontDownloadHistory($source, $uid, $font['id']);
 		$fontInfo = GetMatchedFontInfo($font['fontfile'], $mapFontnameArr);
 		$fontInfoArr[$font['fontfile']] = &$fontInfo;
 	} else {
@@ -111,25 +120,25 @@ function ProcessFont(int $uid, array &$font, string &$mapFontfile, array &$mapFo
 	}
 	return 0;
 }
-function ProcessFontArr(int $uid, array &$fontArr, ?string &$subsetFontASSContent, ?array &$uniqueChar): array {
+function ProcessFontArr(string $source, int $uid, array &$fontArr, ?string &$subsetFontASSContent, ?array &$uniqueChar): array {
 	if (count($fontArr) > 0) {
 		$mapFontnameArr = [];
 		$fontInfoArr = [];
 		foreach ($fontArr as &$font) {
 			$fontExt = pathinfo($font['fontfile'], PATHINFO_EXTENSION);
 			$mapFontfile = GenerateRandomString(8) . ".{$fontExt}";
-			ProcessFont($uid, $font, $mapFontfile, $mapFontnameArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
+			ProcessFont($source, $uid, $font, $mapFontfile, $mapFontnameArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar);
 		}
 		return [$mapFontnameArr, $fontInfoArr];
 	}
 	return [];
 }
-function ParseFontArr(int $uid, array &$fontArr, ?string &$subsetASSContent) {
+function ParseFontArr(string $source, int $uid, array &$fontArr, ?string &$subsetASSContent) {
 	if ($subsetASSContent !== null) {
 		$uniqueChar = [];
 		$subsetFontASSContent = '';
 		GetUniqueChar($subsetASSContent, $uniqueChar);
-		list($mapFontnameArr, $fontInfoArr) = ProcessFontArr($uid, $fontArr, $subsetFontASSContent, $uniqueChar);
+		list($mapFontnameArr, $fontInfoArr) = ProcessFontArr($source, $uid, $fontArr, $subsetFontASSContent, $uniqueChar);
 		ReplaceFontArr($mapFontnameArr, $subsetASSContent, $subsetFontASSContent);
 	}
 }

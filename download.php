@@ -5,13 +5,17 @@ require_once('zipfile.php');
 require_once('vendor/autoload.php');
 ini_set('memory_limit', MaxMemoryMB . 'M');
 
-function CheckSign(string $sign, int $uid, int $timestamp, string $filename, string $fileExt, string $filehash): ?string {
-	if ($sign !== sha1(SignKey . "Download/{$uid}-{$timestamp}-{$filename}.{$fileExt}-{$filehash}" . SignKey) || ($timestamp + DownloadExpireTime) < time()) {
+function CheckSign(string $source, int $uid, int $timestamp, string $sign, string $filename, string $fileExt, string $filehash): ?string {
+	if ($sign !== sha1(SignKey[$source] . "Download/{$source}_{$uid}-{$timestamp}-{$filename}.{$fileExt}-{$filehash}" . SignKey[$source]) || ($timestamp + DownloadExpireTime) < time()) {
 		return null;
 	}
 	return $sign;
 }
-if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !empty($_POST['file'])) {
+if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'], $_GET['filename']) && !empty($_POST['file'])) {
+	if (!isset(SignKey[$_GET['source']])) {
+		dieHTML("Bad source!\n");
+	}
+	$source = $_GET['source'];
 	$uid = intval($_GET['uid']);
 	$timestamp = intval($_GET['time']);
 	$fileInfo = pathinfo($_GET['filename']);
@@ -23,7 +27,7 @@ if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !emp
 	if (!in_array($fileExt, ['ass', 'ssa', 'zip'])) {
 		dieHTML("Bad ext!\n");
 	}
-	$sign = CheckSign($_GET['sign'], $uid, $timestamp, $filename, $fileExt, sha1($_POST['file']));
+	$sign = CheckSign($source, $uid, $timestamp, $_GET['sign'], $filename, $fileExt, sha1($_POST['file']));
 	if ($sign === null) {
 		dieHTML("Bad sign!\n");
 	}
@@ -72,7 +76,7 @@ if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !emp
 				dieHTML("Too many font!\n");
 			}
 			$fontArr = GetFont($fontnameArr);
-			ParseFontArr($uid, $fontArr, $subsetASSContent);
+			ParseFontArr($source, $uid, $fontArr, $subsetASSContent);
 			if (count($fontArr) <= 0) {
 				dieHTML("No font found!\n<p>Fontcount: " . count($fontnameArr) . ", Fontname: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n");
 			}
@@ -160,7 +164,7 @@ if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !emp
 				}
 				$tmpSubsetASSContent = null;
 				$tmpFontArr = GetFont($arr[0]);
-				ParseFontArr($uid, $tmpFontArr, $tmpSubsetASSContent);
+				ParseFontArr($source, $uid, $tmpFontArr, $tmpSubsetASSContent);
 				unset($arr[0]);
 				$fontArr = array_unique(array_merge($fontArr, $tmpFontArr), SORT_REGULAR);
 			}
@@ -195,7 +199,7 @@ if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !emp
 							GetUniqueChar($arr[1], $uniqueChar);
 						}
 						$subsetFontASSContent = '';
-						list($mapFontnameArr, $fontInfoArr) = ProcessFontArr($uid, $fontArr, $subsetFontASSContent, $uniqueChar);
+						list($mapFontnameArr, $fontInfoArr) = ProcessFontArr($source, $uid, $fontArr, $subsetFontASSContent, $uniqueChar);
 						unset($fontArr, $fontInfoArr);
 						header('Content-Type: application/zip');
 						header("Content-Disposition: attachment; filename={$title}_{$currentFileType}; filename*=utf-8''[{$title}_{$currentFileType}] " . rawurlencode($filename) . ".zip");
@@ -208,7 +212,7 @@ if (isset($_GET['sign'], $_GET['uid'], $_GET['time'], $_GET['filename']) && !emp
 					} else {
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
 							$subsetFontASSContent = '';
-							ParseFontArr($uid, $fontArr, $arr[1]);
+							ParseFontArr($source, $uid, $fontArr, $arr[1]);
 						}
 						header('Content-Type: application/zip');
 						header("Content-Disposition: attachment; filename={$title}_{$currentFileType}; filename*=utf-8''[{$title}_{$currentFileType}] " . rawurlencode($filename) . ".zip");

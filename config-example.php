@@ -13,21 +13,21 @@ define('MaxFilesizeMB', 6);
 define('MinSearchLength', 2);
 define('MaxDownloadFontCount', 48);
 define('MaxSearchFontCount', 100);
-define('SignKey', 'FontServer');
+define('SignKey', array('FontServer' => 'FontServer'));
 define('CookieName', 'FontServer-Auth');
 define('LoginExpireTime', 3600);
 define('DownloadExpireTime', 300);
 define('FontPath', '../fonts');
 define('SysCacheDir', sys_get_temp_dir());
 
-function CheckLogin(string $sign, int $uid, int $timestamp): bool {
-	if ($sign !== sha1(SignKey . "Login/{$uid}-{$timestamp}" . SignKey) || ($timestamp + LoginExpireTime) < time()) {
+function CheckLogin(string $source, int $uid, int $timestamp, string $sign): bool {
+	if ($sign !== sha1(SignKey[$source] . "Login/{$source}_{$uid}-{$timestamp}" . SignKey[$source]) || ($timestamp + LoginExpireTime) < time()) {
 		return false;
 	}
 	return true;
 }
 function IsLogin(): bool {
-	if (isset($_COOKIE[(CookieName . '_' . 'Sign')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')]) && CheckLogin($_COOKIE[(CookieName . '_' . 'Sign')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')])) {
+	if (isset($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')]) && CheckLogin($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')])) {
 		return true;
 	}
 	return false;

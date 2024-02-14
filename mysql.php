@@ -23,12 +23,13 @@ function Install() {
 	}
 	$db->exec("CREATE TABLE `download_history` (
 		`id` bigint(20) NOT NULL AUTO_INCREMENT,
+		`source` varchar(11) NOT NULL,
 		`user_id` int(11) NOT NULL,
 		`download_id` bigint(20) NOT NULL,
 		`created_at` timestamp NULL DEFAULT current_timestamp(),
 		`updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
 		PRIMARY KEY (`id`),
-		UNIQUE KEY `index_unique` (`user_id`, `download_id`)
+		UNIQUE KEY `index_unique` (`source`, `user_id`, `download_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 	$db->exec("CREATE TABLE `fonts` (
 		`id` bigint(20) NOT NULL,
