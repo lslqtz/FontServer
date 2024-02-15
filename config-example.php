@@ -67,7 +67,7 @@ function dieHTML(string $string, string $prefix = '') {
 	die();
 }
 function ShowTable(array $fontsResult, bool $foundFont = true) {
-	echo "<p>" . ($foundFont ? 'Found Font: ' : 'Missing Font: ') . count($fontsResult) . "</p>\n";
+	echo "<p>" . ($foundFont ? '找到字体数: ' : '缺失字体数: ') . count($fontsResult) . "</p>\n";
 	echo "<div class=\"searchResult\">\n<table border=\"2\">\n";
 	echo "<thead>\n<tr>\n";
 	echo "<th>ID</th>\n";

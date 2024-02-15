@@ -28,10 +28,10 @@ HTMLStart('Search');
 echo <<<html
 		<div class="searchBox">
 			<form role="serach" method="POST">
-				<label for="fontname">Search font by fontname:</label>
+				<label for="fontname">通过字体名搜索字体:</label>
 				<br>
 				<input type="text" name="fontname" minlength="{$minSearchLength}" />
-				<button type="submit">Search</button>
+				<button type="submit">搜索</button>
 			</form>
 		</div>
 html;
