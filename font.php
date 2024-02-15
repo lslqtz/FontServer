@@ -46,9 +46,14 @@ function AddFont(int $rowID, ?string $fontname, ?string $fontfullname, ?string $
 	}
 	if (empty($fontfullname)) {
 		if (empty($fontname)) {
-			return false;
+			if (empty($fontpsname)) {
+				$fontfullname = $fontpsname;
+			} else {
+				return false;
+			}
+		} else {
+			$fontfullname = $fontname;
 		}
-		$fontfullname = $fontname;
 	}
 	$stmt = $db->prepare("INSERT INTO `fonts` (`id`, `fontname`, `fontfullname`, `fontpsname`, `fontsubfamily`) VALUES (?, ?, ?, ?, ?)");
 	try {

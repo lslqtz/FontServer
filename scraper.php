@@ -5,6 +5,7 @@ require_once('config.php');
 require_once('mysql.php');
 require_once('font.php');
 require_once('vendor/autoload.php');
+define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
 function LogStr(string $message, int $status = 0) {
 	$logType = ($status === -1 ? '错误' : '信息');
 	$date = date('Y-m-d');
@@ -35,14 +36,21 @@ foreach ($fontfiles as $fontfile) {
 				$font = $fontsInfo->current();
 				$font->parse();
 				for ($i = 0; $i < 5; $i++) {
-					if ($font->getFontName(3, $i, 2052) !== null) {
-						$fontsInfoArr[] = [$font->getFontName(3, $i, 2052), $font->getFontFullName(3, $i, 2052), $font->getFontPostscriptName(3, $i, 2052), $font->getFontSubfamily(3, $i, 2052)];
-					}
-					if ($font->getFontName(3, $i, 1033) !== null) {
-						$fontsInfoArr[] = [$font->getFontName(3, $i, 1033), $font->getFontFullName(3, $i, 1033), $font->getFontPostscriptName(3, $i, 1033), $font->getFontSubfamily(3, $i, 1033)];
-					}
-					if ($font->getFontName(3, $i, 1041) !== null) {
-						$fontsInfoArr[] = [$font->getFontName(3, $i, 1041), $font->getFontFullName(3, $i, 1041), $font->getFontPostscriptName(3, $i, 1041), $font->getFontSubfamily(3, $i, 1041)];
+					foreach (LanguageID as $languageID) {
+						$fontname = $font->getFontName(3, $i, $languageID);
+						$fontfullname = $font->getFontFullName(3, $i, $languageID);
+						$fontpsname = $font->getFontPostscriptName(3, $i, $languageID);
+						if (empty($fontfullname)) {
+							if (empty($fontname)) {
+								if (empty($fontpsname)) {
+									continue;
+								}
+								$fontfullname = $fontpsname;
+							} else {
+								$fontfullname = $fontname;
+							}
+						}
+						$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $font->getFontSubfamily(3, $i, $languageID)];
 					}
 				}
 				$fontsInfo->next();
