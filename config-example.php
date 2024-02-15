@@ -6,7 +6,8 @@ define('DBUsername', 'FontServer');
 define('DBPassword', 'FontServer');
 define('DBPersistent', true);
 define('AllowDownloadFont', false);
-define('AllowDownloadSubtitle', true);
+define('AllowDownloadSubsetSubtitle', true);
+define('AllowDownloadSubsetSubtitleWithSeparateFont', true);
 define('ProcessFontForEverySubtitle', true); // false: High memory consumption, true: High performance consumption.
 define('MaxMemoryMB', 1024);
 define('MaxFilesizeMB', 6);
