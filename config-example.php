@@ -59,8 +59,8 @@ function HTMLEnd() {
 	</html>
 html;
 }
-function dieHTML(string $string) {
-	HTMLStart();
+function dieHTML(string $string, string $prefix = '') {
+	HTMLStart($prefix);
 	echo "<p>{$string}<p>\n";
 	HTMLEnd();
 	die();

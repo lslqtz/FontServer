@@ -21,7 +21,7 @@ function SearchFonts(string $fontname): array {
 	return $result;
 }
 if (!IsLogin()) {
-	dieHTML(":(\n");
+	dieHTML(":(\n", 'Search');
 }
 $minSearchLength = MinSearchLength;
 HTMLStart('Search');
