@@ -100,11 +100,12 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 					$archive = new ZipFile();
 					$archive->setDoWrite();
 					foreach ($fontArr as $key => &$font) {
-						if (!is_file(FontPath . '/' . $font['fontfile'])) {
+						$fontPath = GetFontPath($font['fontfile']);
+						if ($fontPath === null) {
 							unset($fontArr[$key]);
 							continue;
 						}
-						$archive->addFile(file_get_contents(FontPath . '/' . $font['fontfile']), $font['fontfile']);
+						$archive->addFile(file_get_contents($fontPath), $font['fontfile']);
 						unset($fontArr[$key]);
 					}
 					$archive->file();
@@ -207,11 +208,12 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				$archive->setDoWrite();
 				if ($isDownloadFont) {
 					foreach ($fontArr as $key => &$font) {
-						if (!is_file(FontPath . '/' . $font['fontfile'])) {
+						$fontPath = GetFontPath($font['fontfile']);
+						if ($fontPath === null) {
 							unset($fontArr[$key]);
 							continue;
 						}
-						$archive->addFile(file_get_contents(FontPath . '/' . $font['fontfile']), $font['fontfile']);
+						$archive->addFile(file_get_contents($fontPath), $font['fontfile']);
 						unset($fontArr[$key]);
 					}
 				} else {

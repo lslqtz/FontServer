@@ -120,7 +120,8 @@ function GetSubsetFontASSContent(?FontLib\TrueType\File $fontInfo, string $mapFo
 	}
 }
 function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfile, array &$mapFontnameArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar, bool $subsetFontOnly = false): int {
-	if (!is_file(FontPath . '/' . $font['fontfile'])) {
+	$fontPath = GetFontPath($font['fontfile']);
+	if ($fontPath === null) {
 		return -2;
 	}
 	$mapFontname = GetFontname($mapFontfile);
@@ -137,7 +138,7 @@ function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfil
 		$mapFontnameArr[$fontpsname2] = $mapFontname;
 	}
 	if ($fontInfoArr === null || !isset($fontInfoArr[$font['fontfile']])) {
-		$fontInfo = GetMatchedFontInfo($font['fontfile'], $mapFontnameArr);
+		$fontInfo = GetMatchedFontInfo($fontPath, $mapFontnameArr);
 		if (MaxCacheFontCount > 0 && $fontInfoArr !== null && $fontInfo !== null) {
 			$fontInfoArr[$font['fontfile']] = &$fontInfo;
 		}

@@ -130,7 +130,7 @@ function DetectDuplicateFont(string $fontext, ?string $fontname, ?string $fontfu
 	return false;
 }
 function GetMatchedFontInfo(string $fontfile, array &$mapFontnameArr): null|FontLib\TrueType\File|FontLib\TrueType\Collection {
-	$fontInfo = FontLib\Font::load((FontPath . '/' . $fontfile));
+	$fontInfo = FontLib\Font::load($fontfile);
 	if ($fontInfo instanceof FontLib\TrueType\Collection) {
 		while ($fontInfo->valid()) {
 			$font2 = $fontInfo->current();

@@ -1,5 +1,5 @@
 <?php
-set_time_limit(120);
+set_time_limit(300);
 define('Title', 'MDU-FontServer');
 define('DBAddress', 'mysql:host=localhost;dbname=FontServer');
 define('DBUsername', 'FontServer');
@@ -19,9 +19,20 @@ define('SignKey', array('FontServer' => 'FontServer'));
 define('CookieName', 'FontServer-Auth');
 define('LoginExpireTime', 3600);
 define('DownloadExpireTime', 300);
-define('FontPath', '../fonts');
+define('FontPath', array('../font', '../fontoss/xz'));
 define('SysCacheDir', sys_get_temp_dir());
 
+function GetMainFontPath(string $fontfile): string {
+	return FontPath[0] . "/{$fontfile}";
+}
+function GetFontPath(string $fontfile): string {
+	foreach (FontPath as $fontPath) {
+		if (is_file("{$fontPath}/{$fontfile}")) {
+			return "{$fontPath}/{$fontfile}";
+		}
+	}
+	return null;
+}
 function CheckLogin(string $source, int $uid, int $timestamp, string $sign): bool {
 	if ($sign !== sha1(SignKey[$source] . "Login/{$source}_{$uid}-{$timestamp}" . SignKey[$source]) || ($timestamp + LoginExpireTime) < time()) {
 		return false;
