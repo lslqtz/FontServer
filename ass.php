@@ -41,7 +41,7 @@ function ReplaceFontArr(array &$mapFontnameArr, string &$subsetASSContent, array
 		}
 		if (!$subsetFontOnly) {
 			$subsetASSContent .= "\n[Font]\n";
-			foreach ($subsetFontASSContent as $mapFontfile => $fontASSContent) {
+			foreach ($subsetFontASSContent as $mapFontfile => &$fontASSContent) {
 				if (in_array(GetFontname($mapFontfile), $mapFontnameArr)) {
 					$subsetASSContent .= "fontname: {$mapFontfile}\n{$fontASSContent}\n";
 				}

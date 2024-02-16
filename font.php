@@ -2,6 +2,7 @@
 require_once('config.php');
 require_once('mysql.php');
 require_once('vendor/autoload.php');
+define('BetterExt', ['ttf', 'ttc']);
 function GetAllFontsFilename(string $fontdir) {
 	$dir = new RecursiveDirectoryIterator(
 	    $fontdir,
@@ -16,7 +17,7 @@ function GetAllFontsFilename(string $fontdir) {
 	);
 	return $files;
 }
-function AddFontMeta(int $uploader, string $fontfile, int $fontsize): int {
+function AddFontMeta(int $uploader, string $fontfile, int $fontsize, bool $force = false): int {
 	global $db;
 	if (!ConnectDB()) {
 		if (function_exists('LogStr')) {
@@ -24,7 +25,10 @@ function AddFontMeta(int $uploader, string $fontfile, int $fontsize): int {
 		}
 		return -1;
 	}
-	$stmt = $db->prepare("INSERT INTO `fonts_meta` (`uploader`, `fontfile`, `fontsize`) VALUES (?, ?, ?)");
+	if ($force) {
+		DeleteFontByFilename($fontfile);
+	}
+	$stmt = $db->prepare("INSERT INTO `fonts_meta` (`uploader`, `fontfile`, `fontsize`) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE `uploader` = VALUES(`uploader`), `fontfile` = VALUES(`fontfile`), `fontsize` = VALUES(`fontsize`), `created_at` = current_timestamp()");
 	try {
 		if (!$stmt->execute([$uploader, $fontfile, $fontsize])) {
 			return -1;
@@ -66,6 +70,28 @@ function AddFont(int $rowID, ?string $fontname, ?string $fontfullname, ?string $
 	$stmt->closeCursor();
 	return true;
 }
+function DeleteFontByID(int $fontID) {
+	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+	}
+	$db->exec("DELETE FROM `fonts` WHERE `id` = {$fontID}");
+	$db->exec("DELETE FROM `fonts_meta` WHERE `id` = {$fontID} LIMIT 1");
+}
+function DeleteFontByFilename(string $filename) {
+	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+	}
+	$fontID = GetFontIDByFilename($filename);
+	if ($fontID > 0) {
+		DeleteFontByID($fontID);
+	}
+}
 function GetFont(array $fontname): array {
 	global $db;
 	if (count($fontname) < 1 || !ConnectDB()) {
@@ -85,11 +111,33 @@ function GetFont(array $fontname): array {
 
 	return $result;
 }
-function DetectDuplicateFont(string $fontext, ?string $fontname, ?string $fontfullname, ?string $fontsubfamily, bool $deleteWorseExt = false): bool {
+function GetFontIDByFilename(string $filename): int {
+	global $db;
+	if (!empty($filename)) {
+		$stmt = $db->prepare("SELECT `id` FROM `fonts_meta` WHERE `fontfile` = ? LIMIT 1");
+		try {
+			if (!$stmt->execute([$filename])) {
+				return 0;
+			}
+		} catch (Throwable $e) {
+			return 0;
+		}
+		$fontID = $stmt->fetchColumn(0);
+		$stmt->closeCursor();
+
+		if ($fontID === false) {
+			return 0;
+		}
+
+		return $fontID;
+	}
+	return 0;
+}
+function DetectDuplicateFont(string $fontext, ?string $fontname, ?string $fontfullname, ?string $fontsubfamily, bool $deleteWorseExt = false): array {
 	global $db;
 	if (empty($fontfullname)) {
 		if (empty($fontname)) {
-			return false;
+			return [-1];
 		}
 		$fontfullname = $fontname;
 	}
@@ -97,37 +145,35 @@ function DetectDuplicateFont(string $fontext, ?string $fontname, ?string $fontfu
 		if (function_exists('LogStr')) {
 			LogStr('无法连接到数据库', -1);
 		}
-		return false;
+		return [-1];
 	}
 	$stmt = $db->prepare("SELECT `fonts`.`id`, `fonts_meta`.`fontfile` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontname` = ? AND `fonts`.`fontfullname` = ? AND `fonts`.`fontsubfamily` = ? LIMIT 1");
 	try {
 		if (!$stmt->execute([$fontname, $fontfullname, $fontsubfamily])) {
-			return true;
+			return [-1];
 		}
 	} catch (Throwable $e) {
-		return true;
+		return [-1];
 	}
 
-	$fontID = $stmt->fetchColumn(0);
-	$fontfile = $stmt->fetchColumn(1);
+	$fontInfo = $stmt->fetch(PDO::FETCH_NUM);
 
 	$stmt->closeCursor();
 
-	$dbFontExt = strtolower(pathinfo($fontfile, PATHINFO_EXTENSION));
-	$betterExts = ['ttf', 'ttc'];
-
-	if ($fontID !== false) {
-		if (in_array($fontext, $betterExts) && !in_array($dbFontExt, $betterExts)) {
+	if ($fontInfo !== false && count($fontInfo) === 2) {
+		$dbFontFileInfo = pathinfo($fontInfo[1]);
+		$dbFontExt = strtolower($dbFontFileInfo['extension']);
+		if (in_array($fontext, BetterExt) && !in_array($dbFontExt, BetterExt)) {
 			if ($deleteWorseExt) {
-				$db->exec("DELETE FROM `fonts` WHERE `id` = {$fontID}");
-				$db->exec("DELETE FROM `fonts_meta` WHERE `id` = {$fontID}");
-				return false;
+				DeleteFontByID($fontInfo[0]);
+				return [0];
 			}
 		}
-		return true;
+		$dbFontFilename = "{$dbFontFileInfo['filename']}.{$dbFontExt}";
+		return [$fontInfo[0], $dbFontFilename];
 	}
 
-	return false;
+	return [0];
 }
 function GetMatchedFontInfo(string $fontfile, array &$mapFontnameArr): null|FontLib\TrueType\File|FontLib\TrueType\Collection {
 	$fontInfo = FontLib\Font::load($fontfile);
@@ -169,7 +215,10 @@ function GetMatchedFontInfo(string $fontfile, array &$mapFontnameArr): null|Font
 	}
 	return null;
 }
-function CloseFontInfo(FontLib\TrueType\File $fontInfo): bool {
+function CloseFontInfo(?FontLib\TrueType\File $fontInfo): bool {
+	if ($fontInfo === null) {
+		return false;
+	}
 	try {
 		$fontInfo->close();
 		return true;

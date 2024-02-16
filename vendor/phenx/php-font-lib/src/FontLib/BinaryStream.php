@@ -67,7 +67,10 @@ class BinaryStream {
       throw new \Exception("Unknown file open mode");
     }
 
-    if ($this->f != null && $this->f != false) {
+    if ($this->f !== null && $this->f !== false) {
+      if ($this->f2 !== null && $this->f2 !== false) {
+        fclose($this->f2);
+      }
       $this->f2 = $this->f;
     }
     $this->f = fopen($filename, $mode);

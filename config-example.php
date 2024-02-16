@@ -25,8 +25,8 @@ define('SysCacheDir', sys_get_temp_dir());
 function GetMainFontPath(string $fontfile): string {
 	return FontPath[0] . "/{$fontfile}";
 }
-function GetFontPath(string $fontfile): string {
-	foreach (FontPath as $fontPath) {
+function GetFontPath(string $fontfile): ?string {
+	foreach (FontPath as &$fontPath) {
 		if (is_file("{$fontPath}/{$fontfile}")) {
 			return "{$fontPath}/{$fontfile}";
 		}
@@ -91,7 +91,7 @@ function ShowTable(array $fontsResult, bool $foundFont = true) {
 	echo "<th>Font Size</th>\n";
 	echo "<th>Font Created Date</th>\n";
 	echo "</tr>\n</thead>\n<tbody>\n";
-	foreach ($fontsResult as $fontResult) {
+	foreach ($fontsResult as &$fontResult) {
 		echo "<tr style=\"height: 42px; white-space: pre-line;\">\n";
 		echo "<td>{$fontResult['id']}</td>\n";
 		echo "<td>{$fontResult['uploader']}</td>\n";

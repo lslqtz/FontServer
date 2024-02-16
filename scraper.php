@@ -27,7 +27,6 @@ foreach ($fontfiles as $fontfile) {
 	$fontFileInfo = pathinfo($fontfile->getFilename());
 	$fontExt = strtolower($fontFileInfo['extension']);
 	$fontFilename = "{$fontFileInfo['filename']}.{$fontExt}";
-	$fontPath = GetMainFontPath($fontFilename);
 	$fontsInfoArr = [];
 	try {
 		$fontsInfo = FontLib\Font::load($oldFontPath);
@@ -36,7 +35,7 @@ foreach ($fontfiles as $fontfile) {
 				$font = $fontsInfo->current();
 				$font->parse();
 				for ($i = 0; $i < 5; $i++) {
-					foreach (LanguageID as $languageID) {
+					foreach (LanguageID as &$languageID) {
 						$fontname = $font->getFontName(3, $i, $languageID);
 						$fontfullname = $font->getFontFullName(3, $i, $languageID);
 						$fontpsname = $font->getFontPostscriptName(3, $i, $languageID);
@@ -57,26 +56,45 @@ foreach ($fontfiles as $fontfile) {
 			}
 		} else {
 			$fontsInfo->parse();
-			for ($i = 0; $i < 10; $i++) {
-				if ($fontsInfo->getFontName(3, $i,  2052) !== null) {
-					$fontsInfoArr[] = [$fontsInfo->getFontName(3, $i, 2052), $fontsInfo->getFontFullName(3, $i, 2052), $fontsInfo->getFontPostscriptName(3, $i, 2052), $fontsInfo->getFontSubfamily(3, $i, 2052)];
-				}
-				if ($fontsInfo->getFontName(3, $i,  1033) !== null) {
-					$fontsInfoArr[] = [$fontsInfo->getFontName(3, $i, 1033), $fontsInfo->getFontFullName(3, $i, 1033), $fontsInfo->getFontPostscriptName(3, $i, 1033), $fontsInfo->getFontSubfamily(3, $i, 1033)];
-				}
-				if ($fontsInfo->getFontName(3, $i,  1041) !== null) {
-					$fontsInfoArr[] = [$fontsInfo->getFontName(3, $i, 1041), $fontsInfo->getFontFullName(3, $i, 1041), $fontsInfo->getFontPostscriptName(3, $i, 1041), $fontsInfo->getFontSubfamily(3, $i, 1041)];
+			for ($i = 0; $i < 5; $i++) {
+				foreach (LanguageID as &$languageID) {
+					$fontname = $fontsInfo->getFontName(3, $i, $languageID);
+					$fontfullname = $fontsInfo->getFontFullName(3, $i, $languageID);
+					$fontpsname = $fontsInfo->getFontPostscriptName(3, $i, $languageID);
+					if (empty($fontfullname)) {
+						if (empty($fontname)) {
+							if (empty($fontpsname)) {
+								continue;
+							}
+							$fontfullname = $fontpsname;
+						} else {
+							$fontfullname = $fontname;
+						}
+					}
+					$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $fontsInfo->getFontSubfamily(3, $i, $languageID)];
 				}
 			}
 		}
-		$fontsInfo->close();
+		try {
+			$fontsInfo->close();
+		} catch (Throwable $e) {
+		}
+		unset($fontsInfo);
 	} catch (Throwable $e) {
 		LogStr("跳过错误字体: {$e->getMessage()}", -1);
 		continue;
 	}
 	foreach ($fontsInfoArr as $key => &$fontsInfo) {
-		if (DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3], true)) {
-			LogStr("跳过重复字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
+		$fontArr = DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3], true);
+		if ($fontArr[0] > 0) {
+			if (strtolower($fontArr[1]) === strtolower($fontFilename)) {
+				$fontFilename = "{$fontFileInfo['filename']}" . time() . ".{$fontExt}";
+				LogStr("跳过重复字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
+				unset($fontsInfoArr[$key]);
+				continue;
+			}
+		} else if ($fontArr[0] < 0) {
+			LogStr("跳过错误字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
 			unset($fontsInfoArr[$key]);
 		}
 	}
@@ -84,18 +102,19 @@ foreach ($fontfiles as $fontfile) {
 		LogStr("跳过空字体", -1);
 		continue;
 	}
+	$fontPath = GetMainFontPath($fontFilename);
 	if (!rename($oldFontPath, $fontPath)) {
 		LogStr("移动字体失败: {$oldFontPath} -> {$fontPath}", -1);
 		continue;
 	}
 	LogStr("移动字体成功: {$oldFontPath} -> {$fontPath}");
-	$rowID = AddFontMeta(1, $fontFilename, filesize($fontPath));
+	$rowID = AddFontMeta(1, $fontFilename, filesize($fontPath), true);
 	if ($rowID <= 0) {
 		rename($fontPath, $oldFontPath);
 		LogStr("添加字体元数据失败: {$fontPath}", -1);
 		continue;
 	}
-	foreach ($fontsInfoArr as $fontsInfo) {
+	foreach ($fontsInfoArr as &$fontsInfo) {
 		if (!AddFont($rowID, $fontsInfo[0], $fontsInfo[1], $fontsInfo[2], $fontsInfo[3])) {
 			LogStr("添加字体失败: {$rowID}, {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
 			continue;

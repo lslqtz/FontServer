@@ -90,6 +90,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 			$fontInfoArr = null;
 			$subsetFontASSContent = [];
 			AutoProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetASSContent, $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
+			$db = null;
 			if ($isDownloadFont || $isDownloadSubsetSubtitle || $isDownloadSubsetSubtitleWithSeparateFont) {
 				ob_implicit_flush(true);
 				ob_end_clean();
@@ -120,7 +121,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 					header("Content-Disposition: attachment; filename=" . Title . "_SubsetSubtitleWithSeparateFont; filename*=utf-8''[" . Title . "_SubsetSubtitleWithSeparateFont] " . rawurlencode($filename) . ".zip");
 					$archive = new ZipFile();
 					$archive->setDoWrite();
-					foreach ($subsetFontASSContent as $fontfilename => $fontContent) {
+					foreach ($subsetFontASSContent as $fontfilename => &$fontContent) {
 						$archive->addFile($fontContent, "Font/{$fontfilename}");
 						unset($subsetFontASSContent[$fontfilename]);
 					}
@@ -228,9 +229,10 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 						$subsetFontASSContent = [];
 						$mapFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar, $isDownloadSubsetSubtitleWithSeparateFont);
 						unset($fontArr, $uniqueChar);
+						$db = null;
 						if ($isDownloadSubsetSubtitleWithSeparateFont) {
 							// 仅 Subset Font 模式下, subsetFontASSContent 实际被当作 subsetFontContent 使用.
-							foreach ($subsetFontASSContent as $fontfilename2 => $fontContent2) {
+							foreach ($subsetFontASSContent as $fontfilename2 => &$fontContent2) {
 								$archive->addFile($fontContent2, "Font/{$fontfilename2}");
 								unset($subsetFontASSContent[$fontfilename2]);
 							}
@@ -248,7 +250,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 							AutoProcessFontArr($source, $uid, $torrentID, $subsetASSFontArr[$filename2], $fontInfoArr, $arr[1], $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
 							if ($isDownloadSubsetSubtitleWithSeparateFont) {
 								// 仅 Subset Font 模式下, subsetFontASSContent 实际被当作 subsetFontContent 使用.
-								foreach ($subsetFontASSContent as $fontfilename2 => $fontContent2) {
+								foreach ($subsetFontASSContent as $fontfilename2 => &$fontContent2) {
 									$archive->addFile($fontContent2, "Font/{$filename2}/{$fontfilename2}");
 									unset($subsetFontASSContent[$fontfilename2]);
 								}
