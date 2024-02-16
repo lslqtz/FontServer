@@ -5,7 +5,6 @@ require_once('config.php');
 require_once('mysql.php');
 require_once('font.php');
 require_once('vendor/autoload.php');
-define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
 function LogStr(string $message, int $status = 0) {
 	$logType = ($status === -1 ? '错误' : '信息');
 	$date = date('Y-m-d');
@@ -24,9 +23,14 @@ foreach ($fontfiles as $fontfile) {
 		LogStr('跳过错误文件', -1);
 		continue;
 	}
+	$fileSize = filesize($oldFontPath);
+	if ($fileSize <= 0) {
+		LogStr('跳过空文件', -1);
+		continue;
+	}
 	$fontFileInfo = pathinfo($fontfile->getFilename());
 	$fontExt = strtolower($fontFileInfo['extension']);
-	$fontFilename = "{$fontFileInfo['filename']}.{$fontExt}";
+	$fontFilename = preg_replace('/\d{10,}/', '', $fontFileInfo['filename']);
 	$fontsInfoArr = [];
 	try {
 		$fontsInfo = FontLib\Font::load($oldFontPath);
@@ -48,6 +52,8 @@ foreach ($fontfiles as $fontfile) {
 							} else {
 								$fontfullname = $fontname;
 							}
+						} else if (empty($fontname)) {
+							$fontname = $fontfullname;
 						}
 						$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $font->getFontSubfamily(3, $i, $languageID)];
 					}
@@ -70,6 +76,8 @@ foreach ($fontfiles as $fontfile) {
 						} else {
 							$fontfullname = $fontname;
 						}
+					} else if (empty($fontname)) {
+						$fontname = $fontfullname;
 					}
 					$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $fontsInfo->getFontSubfamily(3, $i, $languageID)];
 				}
@@ -84,11 +92,12 @@ foreach ($fontfiles as $fontfile) {
 		LogStr("跳过错误字体: {$e->getMessage()}", -1);
 		continue;
 	}
+	$hasDupe = false;
 	foreach ($fontsInfoArr as $key => &$fontsInfo) {
-		$fontArr = DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3], true);
+		$fontArr = DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3]);
 		if ($fontArr[0] > 0) {
-			if (strtolower($fontArr[1]) === strtolower($fontFilename)) {
-				$fontFilename = "{$fontFileInfo['filename']}" . time() . ".{$fontExt}";
+			if (preg_replace('/\d{10,}/', '', strtolower($fontArr[1])) === strtolower("{$fontFilename}.{$fontExt}")) {
+				$hasDupe = true;
 				LogStr("跳过重复字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
 				unset($fontsInfoArr[$key]);
 				continue;
@@ -102,13 +111,17 @@ foreach ($fontfiles as $fontfile) {
 		LogStr("跳过空字体", -1);
 		continue;
 	}
+	if ($hasDupe) {
+		$fontFilename .= time();
+	}
+	$fontFilename .= ".{$fontExt}";
 	$fontPath = GetMainFontPath($fontFilename);
 	if (!rename($oldFontPath, $fontPath)) {
 		LogStr("移动字体失败: {$oldFontPath} -> {$fontPath}", -1);
 		continue;
 	}
 	LogStr("移动字体成功: {$oldFontPath} -> {$fontPath}");
-	$rowID = AddFontMeta(1, $fontFilename, filesize($fontPath), true);
+	$rowID = AddFontMeta(1, $fontFilename, $fileSize, true);
 	if ($rowID <= 0) {
 		rename($fontPath, $oldFontPath);
 		LogStr("添加字体元数据失败: {$fontPath}", -1);

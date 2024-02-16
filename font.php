@@ -58,6 +58,8 @@ function AddFont(int $rowID, ?string $fontname, ?string $fontfullname, ?string $
 		} else {
 			$fontfullname = $fontname;
 		}
+	} else if (empty($fontname)) {
+		$fontname = $fontfullname;
 	}
 	$stmt = $db->prepare("INSERT INTO `fonts` (`id`, `fontname`, `fontfullname`, `fontpsname`, `fontsubfamily`) VALUES (?, ?, ?, ?, ?)");
 	try {
@@ -98,7 +100,7 @@ function GetFont(array $fontname): array {
 		return [];
 	}
 	$fontnameInPlaceholder = (str_repeat('?,', count($fontname) - 1) . '?');
-	$stmt = $db->prepare("SELECT `fonts_meta`.`id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontfullname` IN ({$fontnameInPlaceholder}) OR `fonts`.`fontpsname` IN ({$fontnameInPlaceholder}) GROUP BY `fonts`.`fontfullname` LIMIT " . MaxDownloadFontCount);
+	$stmt = $db->prepare("SELECT MAX(`fonts_meta`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontfullname` IN ({$fontnameInPlaceholder}) OR `fonts`.`fontpsname` IN ({$fontnameInPlaceholder}) GROUP BY `fonts`.`fontfullname` LIMIT " . MaxDownloadFontCount);
 	try {
 		if (!$stmt->execute(array_merge($fontname, $fontname))) {
 			return [];
@@ -184,9 +186,12 @@ function GetMatchedFontInfo(string $fontfile, array &$mapFontnameArr): null|Font
 			try {
 				$font2->parse();
 				for ($i = 0; $i < 5; $i++) {
-					$fontFullname3 = @$font2->getFontFullName(3, $i,  1033);
-					if (($fontFullname3 !== null && isset($mapFontnameArr[$fontFullname3])) || ($fontFullname3 === null && ($fontname3 = @$font2->getFontName(3, $i,  1033)) !== null && isset($mapFontnameArr[$fontname3])) || (($fontpsname3 = @$font2->getFontPostscriptName(3, $i,  1033)) !== null && isset($mapFontnameArr[$fontpsname3]))) {
-						$matched = true;
+					foreach (LanguageID as &$languageID) {
+						$fontFullname3 = @$font2->getFontFullName(3, $i,  $languageID);
+						if (($fontFullname3 !== null && isset($mapFontnameArr[$fontFullname3])) || ($fontFullname3 === null && ($fontname3 = @$font2->getFontName(3, $i,  1033)) !== null && isset($mapFontnameArr[$fontname3])) || (($fontpsname3 = @$font2->getFontPostscriptName(3, $i,  1033)) !== null && isset($mapFontnameArr[$fontpsname3]))) {
+							$matched = true;
+							break 2;
+						}
 					}
 				}
 			} catch (Throwable $e) {

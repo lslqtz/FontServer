@@ -1,5 +1,6 @@
 <?php
 set_time_limit(300);
+date_default_timezone_set('Asia/Shanghai');
 define('Title', 'MDU-FontServer');
 define('DBAddress', 'mysql:host=localhost;dbname=FontServer');
 define('DBUsername', 'FontServer');
@@ -9,10 +10,11 @@ define('AllowDownloadFont', false);
 define('AllowDownloadSubsetSubtitle', true);
 define('AllowDownloadSubsetSubtitleWithSeparateFont', true);
 define('ProcessFontForEverySubtitle', true); // false: High memory consumption, true: High performance consumption.
+define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
 define('MaxMemoryMB', 1024);
 define('MaxFilesizeMB', 6);
 define('MinSearchLength', 2);
-define('MaxCacheFontCount', 6);
+define('MaxCacheFontCount', 0);
 define('MaxDownloadFontCount', 48);
 define('MaxSearchFontCount', 100);
 define('SignKey', array('FontServer' => 'FontServer'));

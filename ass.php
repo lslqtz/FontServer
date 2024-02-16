@@ -220,7 +220,7 @@ function ParseSubtitleFont(string $buffer, array &$fontnameArr, string &$current
 						break;
 					case 'style':
 						$styleExplode2[$fontIndex] = trim($styleExplode2[$fontIndex], ' @');
-						if (count($styleExplode2) > $fontIndex && !in_array($styleExplode2[$fontIndex], $fontnameArr)) {
+						if (count($styleExplode2) > $fontIndex && !in_array($styleExplode2[$fontIndex], $fontnameArr) && !empty($styleExplode2[$fontIndex])) {
 							$fontnameArr[] = $styleExplode2[$fontIndex];
 						}
 						break;
@@ -233,10 +233,9 @@ function ParseSubtitleFont(string $buffer, array &$fontnameArr, string &$current
 			if (count($matches) > 1) {
 				foreach ($matches[1] as &$fontname) {
 					$fontname = trim($fontname, ' @');
-					if ($fontname == 0 || in_array($fontname, $fontnameArr)) {
-						continue;
+					if (!in_array($fontname, $fontnameArr) && !empty($fontname)) {
+						$fontnameArr[] = $fontname;
 					}
-					$fontnameArr[] = $fontname;
 				}
 			}
 		}
