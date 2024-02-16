@@ -7,6 +7,10 @@ namespace Composer\Autoload;
 class ComposerStaticInit8cab5d2b038413b29731e4a08135b0f4
 {
     public static $prefixLengthsPsr4 = array (
+        'Z' => 
+        array (
+            'ZipStream\\' => 10,
+        ),
         'F' => 
         array (
             'FontLib\\' => 8,
@@ -14,6 +18,10 @@ class ComposerStaticInit8cab5d2b038413b29731e4a08135b0f4
     );
 
     public static $prefixDirsPsr4 = array (
+        'ZipStream\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/maennchen/zipstream-php/src',
+        ),
         'FontLib\\' => 
         array (
             0 => __DIR__ . '/..' . '/phenx/php-font-lib/src/FontLib',

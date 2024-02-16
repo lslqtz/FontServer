@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => '__root__',
-        'pretty_version' => 'dev-main',
-        'version' => 'dev-main',
-        'reference' => 'f71e3aad9ac24c3f20e315725af5eaf00439558f',
+        'pretty_version' => 'dev-master',
+        'version' => 'dev-master',
+        'reference' => '8c4b60791e51aa0d84da5f66ae73c6dbf32fd1aa',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,11 +11,20 @@
     ),
     'versions' => array(
         '__root__' => array(
-            'pretty_version' => 'dev-main',
-            'version' => 'dev-main',
-            'reference' => 'f71e3aad9ac24c3f20e315725af5eaf00439558f',
+            'pretty_version' => 'dev-master',
+            'version' => 'dev-master',
+            'reference' => '8c4b60791e51aa0d84da5f66ae73c6dbf32fd1aa',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'maennchen/zipstream-php' => array(
+            'pretty_version' => '3.1.0',
+            'version' => '3.1.0.0',
+            'reference' => 'b8174494eda667f7d13876b4a7bfef0f62a7c0d1',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../maennchen/zipstream-php',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
