@@ -200,7 +200,7 @@ function DetectDuplicateFont(string $fontext, ?string $fontname, ?string $fontfu
 
 	return [0];
 }
-function GetMatchedFontInfo(string $fontfile, array &$mapFontnameArr): null|FontLib\TrueType\File|FontLib\TrueType\Collection {
+function GetMatchedFontInfo(string $fontfile, array &$mapFontnameArr): ?FontLib\TrueType\File {
 	$fontInfo = FontLib\Font::load($fontfile);
 	if ($fontInfo instanceof FontLib\TrueType\Collection) {
 		while ($fontInfo->valid()) {
@@ -211,7 +211,7 @@ function GetMatchedFontInfo(string $fontfile, array &$mapFontnameArr): null|Font
 				for ($i = 0; $i < 5; $i++) {
 					foreach (LanguageID as &$languageID) {
 						$fontFullname3 = @$font2->getFontFullName(3, $i,  $languageID);
-						if (($fontFullname3 !== null && isset($mapFontnameArr[$fontFullname3])) || ($fontFullname3 === null && ($fontname3 = @$font2->getFontName(3, $i,  1033)) !== null && isset($mapFontnameArr[$fontname3])) || (($fontpsname3 = @$font2->getFontPostscriptName(3, $i,  1033)) !== null && isset($mapFontnameArr[$fontpsname3]))) {
+						if ($fontFullname3 !== null && isset($mapFontnameArr[$fontFullname3])) {
 							$matched = true;
 							break 2;
 						}
@@ -219,7 +219,35 @@ function GetMatchedFontInfo(string $fontfile, array &$mapFontnameArr): null|Font
 				}
 			} catch (Throwable $e) {
 			}
-			unset($fontFullname3, $fontname3, $fontpsname3);
+			unset($fontFullname3);
+			if (!$matched) {
+				try {
+					$font2->close();
+				} catch (Throwable $e) {
+				}
+				$fontInfo->next();
+				continue;
+			}
+			return $font2;
+		}
+		$fontInfo->rewind();
+		while ($fontInfo->valid()) {
+			$font2 = $fontInfo->current();
+			$matched = false;
+			try {
+				$font2->parse();
+				for ($i = 0; $i < 5; $i++) {
+					foreach (LanguageID as &$languageID) {
+						$fontname3 = @$font2->getFontName(3, $i,  $languageID);
+						if ($fontname3 !== null && isset($mapFontnameArr[$fontname3])) {
+							$matched = true;
+							break 2;
+						}
+					}
+				}
+			} catch (Throwable $e) {
+			}
+			unset($fontname3);
 			if (!$matched) {
 				try {
 					$font2->close();

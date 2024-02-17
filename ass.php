@@ -99,13 +99,13 @@ function GetSubsetFontFile(?FontLib\TrueType\File $fontInfo, string $mapFontname
 	}
 	return null;
 }
-function GetSubsetFontContent(?FontLib\TrueType\File $fontInfo, string $mapFontname, string $mapFontfile, array &$subsetFontContent, array &$uniqueChar) {
+function GetSubsetFontContent(array &$font, ?FontLib\TrueType\File $fontInfo, string $mapFontname, string $mapFontfile, array &$subsetFontContent, array &$uniqueChar) {
 	if ($fontInfo === null) {
 		return;
 	}
 	$subFontTmpFile = GetSubsetFontFile($fontInfo, $mapFontname, $uniqueChar);
 	if ($subFontTmpFile !== null) {
-		$subsetFontContent[$mapFontfile] = file_get_contents($subFontTmpFile);
+		$subsetFontContent["[{$font['fontfullname']}] {$mapFontfile}"] = file_get_contents($subFontTmpFile);
 		unlink($subFontTmpFile);
 	}
 }
@@ -152,7 +152,7 @@ function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfil
 		if (!$subsetFontOnly) {
 			GetSubsetFontASSContent($fontInfo, $mapFontname, $mapFontfile, $subsetFontASSContent, $uniqueChar);
 		} else {
-			GetSubsetFontContent($fontInfo, $mapFontname, $mapFontfile, $subsetFontASSContent, $uniqueChar);
+			GetSubsetFontContent($font, $fontInfo, $mapFontname, $mapFontfile, $subsetFontASSContent, $uniqueChar);
 		}
 	}
 	if ($fontInfoArr === null) {
