@@ -100,9 +100,9 @@ function GetFont(array $fontname): array {
 		return [];
 	}
 	$fontnameInPlaceholder = (str_repeat('?,', count($fontname) - 1) . '?');
-	$stmt = $db->prepare("SELECT MAX(`fonts_meta`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontfullname` IN ({$fontnameInPlaceholder}) OR `fonts`.`fontpsname` IN ({$fontnameInPlaceholder}) GROUP BY `fonts`.`fontfullname` LIMIT " . MaxDownloadFontCount);
+	$stmt = $db->prepare("SELECT MAX(`fonts`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontfullname` IN ({$fontnameInPlaceholder}) GROUP BY `fonts`.`fontfullname` LIMIT " . MaxDownloadFontCount);
 	try {
-		if (!$stmt->execute(array_merge($fontname, $fontname))) {
+		if (!$stmt->execute($fontname)) {
 			return [];
 		}
 	} catch (Throwable $e) {
@@ -111,7 +111,30 @@ function GetFont(array $fontname): array {
 	$result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 	$stmt->closeCursor();
 
-	return $result;
+	foreach ($result as &$r) {
+		$key = array_search($r['fontfullname'], $fontname);
+		if ($key !== false) {
+			unset($fontname[$key]);
+		}
+	}
+	$fontname = array_values($fontname);
+
+	if (count($fontname) < 1) {
+		return $result;
+	}
+	$fontnameInPlaceholder2 = (str_repeat('?,', count($fontname) - 1) . '?');
+	$stmt2 = $db->prepare("SELECT MAX(`fonts`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontname` IN ({$fontnameInPlaceholder2}) GROUP BY `fonts`.`fontname` LIMIT " . MaxDownloadFontCount);
+	try {
+		if (!$stmt2->execute($fontname)) {
+			return $result;
+		}
+	} catch (Throwable $e) {
+		return $result;
+	}
+	$result2 = $stmt2->fetchAll(PDO::FETCH_ASSOC);
+	$stmt2->closeCursor();
+
+	return array_merge($result, $result2);
 }
 function GetFontIDByFilename(string $filename): int {
 	global $db;
