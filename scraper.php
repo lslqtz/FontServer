@@ -94,7 +94,7 @@ foreach ($fontfiles as $fontfile) {
 	}
 	$hasDupe = false;
 	foreach ($fontsInfoArr as $key => &$fontsInfo) {
-		$fontArr = DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3]);
+		$fontArr = DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3], true);
 		if ($fontArr[0] > 0) {
 			if (preg_replace('/\d{10,}/', '', strtolower($fontArr[1])) === strtolower("{$fontFilename}.{$fontExt}")) {
 				$hasDupe = true;

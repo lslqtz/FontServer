@@ -123,7 +123,7 @@ function GetFont(int $maxDownloadFontCount, array $fontname): array {
 		return $result;
 	}
 	$fontnameInPlaceholder2 = (str_repeat('?,', count($fontname) - 1) . '?');
-	$stmt2 = $db->prepare("SELECT MAX(`fonts`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontname` IN ({$fontnameInPlaceholder2}) GROUP BY `fonts`.`fontname` LIMIT LIMIT {$maxDownloadFontCount}");
+	$stmt2 = $db->prepare("SELECT MAX(`fonts`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontname` IN ({$fontnameInPlaceholder2}) GROUP BY `fonts`.`fontname` LIMIT {$maxDownloadFontCount}");
 	try {
 		if (!$stmt2->execute($fontname)) {
 			return $result;

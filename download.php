@@ -14,10 +14,9 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	if (!isset(SourcePolicy[$_GET['source']])) {
 		dieHTML("坏来源!\n", 'Download');
 	}
-	$source = $_GET['source'];
-	$uid = intval($_GET['uid']);
-	$torrentID = intval($_GET['torrent_id']);
-	$timestamp = intval($_GET['time']);
+	if (!is_numeric($_GET['uid']) || !is_numeric($_GET['torrent_id']) || !is_numeric($_GET['time'])) {
+		dieHTML("坏参数!\n", 'Download');
+	}
 	$fileInfo = pathinfo($_GET['filename']);
 	$filename = $fileInfo['filename'];
 	if (empty($filename)) {
@@ -27,6 +26,10 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	if (!in_array($fileExt, ['ass', 'ssa', 'zip'])) {
 		dieHTML("坏扩展名!\n", 'Download');
 	}
+	$source = $_GET['source'];
+	$uid = intval($_GET['uid']);
+	$torrentID = intval($_GET['torrent_id']);
+	$timestamp = intval($_GET['time']);
 	$sign = CheckSign($source, $uid, $torrentID, $timestamp, $_GET['sign'], $filename, $fileExt, sha1($_POST['file']));
 	if ($sign === null) {
 		dieHTML("坏签名!\n", 'Download');
@@ -49,7 +52,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 		dieHTML("下载自动子集化字幕 (非嵌入字体) 功能当前被停用!\n", 'Download');
 	}
 
-	if (($decodedUploadFile = base64_decode($_POST['file'])) === false) {
+	if (($decodedUploadFile = base64_decode($_POST['file'])) === false || empty($decodedUploadFile)) {
 		dieHTML("坏文件!\n", 'Download');
 	}
 	if ((strlen($decodedUploadFile) / 1024 / 1024) > $sourcePolicy['MaxFilesizeMB']) {

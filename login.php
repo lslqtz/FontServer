@@ -5,6 +5,9 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
 	if ($_GET['source'] !== 'MDU') {
 		dieHTML("坏来源!\n", 'Login');
 	}
+	if (!is_numeric($_GET['uid']) || !is_numeric($_GET['time'])) {
+		dieHTML("坏参数!\n", 'Login');
+	}
 	if (IsLogin()) {
 		header('HTTP/1.1 302 Found');
 		header('Location: /search.php');
