@@ -119,7 +119,7 @@ function GetSubsetFontASSContent(?FontLib\TrueType\File $fontInfo, string $mapFo
 		unlink($subFontTmpFile);
 	}
 }
-function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfile, array &$mapFontnameArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar, bool $subsetFontOnly = false): int {
+function ProcessFont(string $source, array &$font, string &$mapFontfile, array &$mapFontnameArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar, bool $subsetFontOnly = false): int {
 	$fontPath = GetFontPath($font['fontfile']);
 	if ($fontPath === null) {
 		return -2;
@@ -139,13 +139,13 @@ function ProcessFont(string $source, int $uid, array &$font, string &$mapFontfil
 	}
 	if ($fontInfoArr === null || !isset($fontInfoArr[$font['fontfile']])) {
 		$fontInfo = GetMatchedFontInfo($fontPath, $mapFontnameArr);
-		if (MaxCacheFontCount > 0 && $fontInfoArr !== null && $fontInfo !== null) {
+		if (SourcePolicy[$source]['MaxCacheFontCount'] > 0 && $fontInfoArr !== null && $fontInfo !== null) {
 			$fontInfoArr[$font['fontfile']] = &$fontInfo;
 		}
 	} else {
 		$fontInfo = $fontInfoArr[$font['fontfile']];
 	}
-	if ($fontInfoArr !== null && count($fontInfoArr) > MaxCacheFontCount) {
+	if ($fontInfoArr !== null && count($fontInfoArr) > SourcePolicy[$source]['MaxCacheFontCount']) {
 		CloseFontInfo(array_shift($fontInfoArr));
 	}
 	if ($subsetFontASSContent !== null) {
@@ -166,7 +166,7 @@ function ProcessFontArr(string $source, int $uid, int $torrentID, array &$fontAr
 		foreach ($fontArr as &$font) {
 			$fontExt = pathinfo($font['fontfile'], PATHINFO_EXTENSION);
 			$mapFontfile = GenerateRandomString(8) . ".{$fontExt}";
-			if (ProcessFont($source, $uid, $font, $mapFontfile, $mapFontnameArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar, $subsetFontOnly) === 0) {
+			if (ProcessFont($source, $font, $mapFontfile, $mapFontnameArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar, $subsetFontOnly) === 0) {
 				AddFontDownloadHistory($source, $uid, $torrentID, $font['id']);
 			}
 		}

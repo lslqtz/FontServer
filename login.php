@@ -1,7 +1,7 @@
 <?php
 require_once('config.php');
 if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
-	//if (!isset(SignKey[$_GET['source']])) {
+	//if (!isset(SourcePolicy[$_GET['source']])) {
 	if ($_GET['source'] !== 'MDU') {
 		dieHTML("坏来源!\n", 'Login');
 	}

@@ -6,18 +6,22 @@ define('DBAddress', 'mysql:host=localhost;dbname=FontServer');
 define('DBUsername', 'FontServer');
 define('DBPassword', 'FontServer');
 define('DBPersistent', true);
-define('AllowDownloadFont', false);
-define('AllowDownloadSubsetSubtitle', true);
-define('AllowDownloadSubsetSubtitleWithSeparateFont', true);
-define('ProcessFontForEverySubtitle', true); // false: High memory consumption, true: High performance consumption.
 define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
 define('MaxMemoryMB', 1024);
-define('MaxFilesizeMB', 6);
-define('MinSearchLength', 2);
-define('MaxCacheFontCount', 0);
-define('MaxDownloadFontCount', 48);
-define('MaxSearchFontCount', 100);
-define('SignKey', array('FontServer' => 'FontServer'));
+define('SourcePolicy', array(
+	'FontServer' => array(
+		'key' => 'FontServer',
+		'AllowDownloadFont' => false,
+		'AllowDownloadSubsetSubtitle' => true,
+		'AllowDownloadSubsetSubtitleWithSeparateFont' => true,
+		'ProcessFontForEverySubtitle' => true, // false: High memory consumption, true: High performance consumption.
+		'MaxCacheFontCount' => 0,
+		'MaxFilesizeMB' => 6,
+		'MaxDownloadFontCount' => 48,
+		'MinSearchLength' => 2,
+		'MaxSearchFontCount' => 100
+	)
+));
 define('CookieName', 'FontServer-Auth');
 define('LoginExpireTime', 3600);
 define('DownloadExpireTime', 300);
@@ -36,16 +40,17 @@ function GetFontPath(string $fontfile): ?string {
 	return null;
 }
 function CheckLogin(string $source, int $uid, int $timestamp, string $sign): bool {
-	if ($sign !== sha1(SignKey[$source] . "Login/{$source}_{$uid}-{$timestamp}" . SignKey[$source]) || ($timestamp + LoginExpireTime) < time()) {
+	if ($sign !== sha1(SourcePolicy[$source]['key'] . "Login/{$source}_{$uid}-{$timestamp}" . SourcePolicy[$source]['key']) || ($timestamp + LoginExpireTime) < time()) {
 		return false;
 	}
 	return true;
 }
-function IsLogin(): bool {
+function IsLogin(): ?array {
+	// Return sourcePolicy.
 	if (isset($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')]) && CheckLogin($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')])) {
-		return true;
+		return SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]];
 	}
-	return false;
+	return null;
 }
 function HTMLStart(string $prefix = '') {
 	$title = Title;

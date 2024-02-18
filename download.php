@@ -5,13 +5,13 @@ require_once('vendor/autoload.php');
 ini_set('memory_limit', MaxMemoryMB . 'M');
 
 function CheckSign(string $source, int $uid, int $torrentID, int $timestamp, string $sign, string $filename, string $fileExt, string $filehash): ?string {
-	if ($sign !== sha1(SignKey[$source] . "Download/{$source}_{$uid}-{$torrentID}-{$timestamp}-{$filename}.{$fileExt}-{$filehash}" . SignKey[$source]) || ($timestamp + DownloadExpireTime) < time()) {
+	if ($sign !== sha1(SourcePolicy[$source]['key'] . "Download/{$source}_{$uid}-{$torrentID}-{$timestamp}-{$filename}.{$fileExt}-{$filehash}" . SourcePolicy[$source]['key']) || ($timestamp + DownloadExpireTime) < time()) {
 		return null;
 	}
 	return $sign;
 }
 if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_GET['sign'], $_GET['filename']) && !empty($_POST['file'])) {
-	if (!isset(SignKey[$_GET['source']])) {
+	if (!isset(SourcePolicy[$_GET['source']])) {
 		dieHTML("坏来源!\n", 'Download');
 	}
 	$source = $_GET['source'];
@@ -31,10 +31,28 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	if ($sign === null) {
 		dieHTML("坏签名!\n", 'Download');
 	}
+
+	$fontArr = [];
+	$fontnameArr = [];
+	$sourcePolicy = SourcePolicy[$source];
+	$isDownload = ((isset($_GET['download']) && $_GET['download'] == 1) ? true : false);
+	$isDownloadFont = (($isDownload && (isset($_GET['mode']) && $_GET['mode'] === 'font')) ? true : false);
+	if ($isDownloadFont && !$sourcePolicy['AllowDownloadFont']) {
+		dieHTML("下载字体功能当前被停用!\n", 'Download');
+	}
+	$isDownloadSubsetSubtitle = (($isDownload && !$isDownloadFont && (isset($_GET['mode']) && $_GET['mode'] === 'subsetSubtitle')) ? true : false);
+	if ($isDownloadSubsetSubtitle && !$sourcePolicy['AllowDownloadSubsetSubtitle']) {
+		dieHTML("下载自动子集化字幕 (嵌入字体) 功能当前被停用!\n", 'Download');
+	}
+	$isDownloadSubsetSubtitleWithSeparateFont = (($isDownload && !$isDownloadSubsetSubtitle && (isset($_GET['mode']) && $_GET['mode'] === 'subsetSubtitleWithSeparateFont')) ? true : false);
+	if ($isDownloadSubsetSubtitleWithSeparateFont && !$sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
+		dieHTML("下载自动子集化字幕 (非嵌入字体) 功能当前被停用!\n", 'Download');
+	}
+
 	if (($decodedUploadFile = base64_decode($_POST['file'])) === false) {
 		dieHTML("坏文件!\n", 'Download');
 	}
-	if ((strlen($decodedUploadFile) / 1024 / 1024) > MaxFilesizeMB) {
+	if ((strlen($decodedUploadFile) / 1024 / 1024) > $sourcePolicy['MaxFilesizeMB']) {
 		dieHTML("太大的文件!\n", 'Download');
 	}
 	$uploadTmpFilename = tempnam(SysCacheDir, Title . '_');
@@ -47,22 +65,6 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	unset($decodedUploadFile);
 	fseek($uploadFile, 0);
 
-	$fontArr = [];
-	$fontnameArr = [];
-	$isDownload = ((isset($_GET['download']) && $_GET['download'] == 1) ? true : false);
-	$isDownloadFont = (($isDownload && (isset($_GET['mode']) && $_GET['mode'] === 'font')) ? true : false);
-	if ($isDownloadFont && !AllowDownloadFont) {
-		dieHTML("下载字体功能当前被停用!\n", 'Download');
-	}
-	$isDownloadSubsetSubtitle = (($isDownload && !$isDownloadFont && (isset($_GET['mode']) && $_GET['mode'] === 'subsetSubtitle')) ? true : false);
-	if ($isDownloadSubsetSubtitle && !AllowDownloadSubsetSubtitle) {
-		dieHTML("下载自动子集化字幕 (嵌入字体) 功能当前被停用!\n", 'Download');
-	}
-	$isDownloadSubsetSubtitleWithSeparateFont = (($isDownload && !$isDownloadSubsetSubtitle && (isset($_GET['mode']) && $_GET['mode'] === 'subsetSubtitleWithSeparateFont')) ? true : false);
-	if ($isDownloadSubsetSubtitleWithSeparateFont && !AllowDownloadSubsetSubtitleWithSeparateFont) {
-		dieHTML("下载自动子集化字幕 (非嵌入字体) 功能当前被停用!\n", 'Download');
-	}
-
 	switch ($fileExt) {
 		case 'ass':
 		case 'ssa':
@@ -72,17 +74,17 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 			$matchedTypes = [];
 			$subsetASSContent = (($isDownloadSubsetSubtitle || $isDownloadSubsetSubtitleWithSeparateFont) ? '' : null);
 			while (($buffer = fgets($uploadFile)) !== false) {
-				if (count($fontnameArr) > MaxDownloadFontCount) {
+				if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 					break;
 				}
 				ParseSubtitleFont($buffer, $fontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
 			}
 			fclose($uploadFile);
 			unlink($uploadTmpFilename);
-			if (count($fontnameArr) > MaxDownloadFontCount) {
+			if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				dieHTML("太多的字体!\n", 'Download');
 			}
-			$fontArr = GetFont($fontnameArr);
+			$fontArr = GetFont($sourcePolicy['MaxDownloadFontCount'], $fontnameArr);
 			if (count($fontArr) <= 0) {
 				dieHTML("找不到字体!\n<p>字体数: " . count($fontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n", 'Download');
 			}
@@ -150,7 +152,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				dieHTML("读取字幕压缩包时发生错误!\n", 'Download');
 			}
 			for ($i = 0; $i < $subtitleArchive->numFiles; $i++) {
-				if (count($fontnameArr) > MaxDownloadFontCount) {
+				if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 					break;
 				}
 				$currentType = '';
@@ -174,7 +176,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				}
 				$subtitleContentHandle = $subtitleArchive->getStream($subtitleFileName);
 				while (($buffer = fgets($subtitleContentHandle)) !== false) {
-					if (count($tmpFontnameArr) > MaxDownloadFontCount) {
+					if (count($tmpFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 						$fontnameArr = $tmpFontnameArr;
 						break 2;
 					}
@@ -182,7 +184,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				}
 				fclose($subtitleContentHandle);
 				$fontnameArr = array_unique(array_merge($fontnameArr, $tmpFontnameArr), SORT_REGULAR);
-				if (count($fontnameArr) > MaxDownloadFontCount) {
+				if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 					break;
 				}
 				$subsetASSFiles[$subtitleFileName] = [$tmpFontnameArr, $subsetASSContent];
@@ -191,7 +193,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 			fclose($uploadFile);
 			unlink($uploadTmpFilename);
 			unset($uploadFile, $uploadTmpFilename, $subtitleArchive, $subsetASSContent, $tmpFontnameArr);
-			if (count($fontnameArr) > MaxDownloadFontCount) {
+			if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				dieHTML("太多的字体!\n", 'Download');
 			}
 			$subsetASSFontArr = [];
@@ -199,7 +201,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				if ((memory_get_peak_usage() / 1024 / 1024) > ceil(MaxMemoryMB / 1.5)) {
 					dieHTML("无法处理这个字幕! (Error: 1)\n", 'Download');
 				}
-				$subsetASSFontArr[$filename2] = GetFont($arr[0]);
+				$subsetASSFontArr[$filename2] = GetFont($sourcePolicy['MaxDownloadFontCount'], $arr[0]);
 				$fontArr = array_unique(array_merge($fontArr, $subsetASSFontArr[$filename2]), SORT_REGULAR);
 				unset($arr[0]);
 			}
@@ -229,7 +231,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 						unset($fontArr[$key]);
 					}
 				} else {
-					if (!ProcessFontForEverySubtitle) {
+					if (!$sourcePolicy['ProcessFontForEverySubtitle']) {
 						$uniqueChar = [];
 						// 预处理, 得到字幕所有字符的并集.
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
@@ -296,17 +298,17 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	HTMLStart('Download');
 	echo "<script src=\"base64.js\"></script>\n";
 	echo "<script>function Download(target, filename = null) { switch (target) { case 'font': case 'subsetSubtitle': case 'subsetSubtitleWithSeparateFont': break; case 'originalSubtitle':  let blob = new Blob([Base64.toUint8Array(downloadForm.querySelector('input[name=\"file\"]').value)]); let ele = document.createElement('a'); ele.setAttribute('download', filename); ele.href = window.URL.createObjectURL(blob); document.body.appendChild(ele); ele.click(); ele.remove(); return; default: console.log('Bad target: ' + target); return; break; } downloadForm.action = downloadForm.action.replace(/(&|\?)download=(1|0)/, '').replace(/(&|\?)mode=(font|subsetSubtitleWithSeparateFont|subsetSubtitle)/i, ''); downloadForm.action += ('&download=1&mode=' + target); downloadForm.submit(); }</script>\n";
-	if (AllowDownloadFont || AllowDownloadSubsetSubtitle || AllowDownloadSubsetSubtitleWithSeparateFont) {
+	if ($sourcePolicy['AllowDownloadFont'] || $sourcePolicy['AllowDownloadSubsetSubtitle'] || $sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
 		echo "<form id=\"downloadForm\" method=\"POST\">\n";
 		echo "<input type=\"hidden\" name=\"file\" value=\"{$_POST['file']}\" />\n";
 		echo "<p><a href=\"javascript:Download('originalSubtitle', '" . htmlspecialchars("{$filename}.{$fileExt}") . "');\">下载原始字幕!</a></p>\n";
-		if (AllowDownloadFont) {
+		if ($sourcePolicy['AllowDownloadFont']) {
 			echo "<p><a href=\"javascript:Download('font');\">下载字体!</a></p>\n";
 		}
-		if (AllowDownloadSubsetSubtitle) {
+		if ($sourcePolicy['AllowDownloadSubsetSubtitle']) {
 			echo "<p><a href=\"javascript:Download('subsetSubtitle');\">下载自动子集化字幕 (推荐, 嵌入字体)!</a></p>\n";
 		}
-		if (AllowDownloadSubsetSubtitleWithSeparateFont) {
+		if ($sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
 			echo "<p><a href=\"javascript:Download('subsetSubtitleWithSeparateFont');\">下载自动子集化字幕 (非嵌入字体)!</a></p>\n";
 		}
 		echo "</form>\n";
