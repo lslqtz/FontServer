@@ -8,6 +8,7 @@ define('DBPassword', 'FontServer');
 define('DBPersistent', true);
 define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
 define('MaxMemoryMB', 1024);
+define('CompressLevel', 3);
 define('SourcePolicy', array(
 	'FontServer' => array(
 		'key' => 'FontServer',

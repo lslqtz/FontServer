@@ -99,7 +99,11 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				if ($isDownloadFont) {
 					$archive = new ZipStream\ZipStream(
 						outputName: "[" . Title . "_Font] {$filename}.zip",
-						sendHttpHeaders: true
+						sendHttpHeaders: true,
+						enableZip64: false,
+						defaultEnableZeroHeader: false,
+						defaultDeflateLevel: CompressLevel,
+						contentType: 'application/zip'
 					);
 					foreach ($fontArr as $key => &$font) {
 						$fontPath = GetFontPath($font['fontfile']);
@@ -123,7 +127,11 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				if ($isDownloadSubsetSubtitleWithSeparateFont) {
 					$archive = new ZipStream\ZipStream(
 						outputName: "[" . Title . "_SubsetSubtitleWithSeparateFont] {$filename}.zip",
-						sendHttpHeaders: true
+						sendHttpHeaders: true,
+						enableZip64: false,
+						defaultEnableZeroHeader: false,
+						defaultDeflateLevel: CompressLevel,
+						contentType: 'application/zip'
 					);
 					foreach ($subsetFontASSContent as $fontfilename => &$fontContent) {
 						$archive->addFile(
@@ -215,7 +223,11 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				header('X-Accel-Buffering: no');
 				$archive = new ZipStream\ZipStream(
 					outputName: "[" . Title . "_{$currentFileType}] {$filename}.zip",
-					sendHttpHeaders: true
+					sendHttpHeaders: true,
+					enableZip64: false,
+					defaultEnableZeroHeader: false,
+					defaultDeflateLevel: CompressLevel,
+					contentType: 'application/zip'
 				);
 				if ($isDownloadFont) {
 					foreach ($fontArr as $key => &$font) {
