@@ -58,15 +58,6 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	if ((strlen($decodedUploadFile) / 1024 / 1024) > $sourcePolicy['MaxFilesizeMB']) {
 		dieHTML("太大的文件!\n", 'Download');
 	}
-	$uploadTmpFilename = tempnam(SysCacheDir, Title . '_');
-	$uploadFile = fopen($uploadTmpFilename, ($fileExt === 'zip' ? 'wb+' : 'w+'));
-	if ($uploadFile === false) {
-		fclose($uploadFile);
-		dieHTML("读取字幕时发生错误!\n", 'Download');
-	}
-	fwrite($uploadFile, $decodedUploadFile);
-	unset($decodedUploadFile);
-	fseek($uploadFile, 0);
 
 	switch ($fileExt) {
 		case 'ass':
@@ -76,14 +67,13 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 			$foundFontIndex = false;
 			$matchedTypes = [];
 			$subsetASSContent = (($isDownloadSubsetSubtitle || $isDownloadSubsetSubtitleWithSeparateFont) ? '' : null);
-			while (($buffer = fgets($uploadFile)) !== false) {
+			$uploadFileContentArr = explode("\n", ConvertEncode($decodedUploadFile));
+			foreach ($uploadFileContentArr as $uploadFileLine) {
 				if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 					break;
 				}
-				ParseSubtitleFont($buffer, $fontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
+				ParseSubtitleFont($uploadFileLine, $fontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
 			}
-			fclose($uploadFile);
-			unlink($uploadTmpFilename);
 			if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				dieHTML("太多的字体!\n", 'Download');
 			}
@@ -153,6 +143,15 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 			}
 			break;
 		case 'zip':
+			$uploadTmpFilename = tempnam(SysCacheDir, Title . '_');
+			$uploadFile = fopen($uploadTmpFilename, ($fileExt === 'zip' ? 'wb+' : 'w+'));
+			if ($uploadFile === false) {
+				fclose($uploadFile);
+				dieHTML("读取字幕时发生错误!\n", 'Download');
+			}
+			fwrite($uploadFile, $decodedUploadFile);
+			unset($decodedUploadFile);
+			fseek($uploadFile, 0);
 			$subsetASSFiles = [];
 			$subtitleArchive = new \ZipArchive();
 			$subtitleArchive->open($uploadTmpFilename);
@@ -185,15 +184,18 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				if ($subtitleExt !== 'ass' && $subtitleExt !== 'ssa') {
 					continue;
 				}
-				$subtitleContentHandle = $subtitleArchive->getStream($subtitleFileName);
-				while (($buffer = fgets($subtitleContentHandle)) !== false) {
+				$subtitleContent = $subtitleArchive->getFromName($subtitleFileName);
+				if (empty($subtitleContent)) {
+					continue;
+				}
+				$subtitleContentArr = explode("\n", ConvertEncode($subtitleContent));
+				foreach ($subtitleContentArr as $subtitleContentLine) {
 					if (count($tmpFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 						$fontnameArr = $tmpFontnameArr;
 						break 2;
 					}
-					ParseSubtitleFont($buffer, $tmpFontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
+					ParseSubtitleFont($subtitleContentLine, $tmpFontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
 				}
-				fclose($subtitleContentHandle);
 				$fontnameArr = array_unique(array_merge($fontnameArr, $tmpFontnameArr), SORT_REGULAR);
 				if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 					break;
@@ -239,7 +241,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 							unset($fontArr[$key]);
 							continue;
 						}
-						$archive->addFile(
+						$archive->addFileFromPath(
 							fileName: $font['fontfile'],
 							path: $fontPath
 						);
@@ -250,6 +252,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 						$uniqueChar = [];
 						// 预处理, 得到字幕所有字符的并集.
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
+							$arr[1] = ConvertEncode($arr[1]);
 							GetUniqueChar($arr[1], $uniqueChar);
 						}
 						// 准备好所需的子集化字幕用附加字体信息.
@@ -281,6 +284,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 						$fontInfoArr = [];
 						foreach ($subsetASSFiles as $filename2 => &$arr) {
 							$subsetFontASSContent = [];
+							$arr[1] = ConvertEncode($arr[1]);
 							AutoProcessFontArr($source, $uid, $torrentID, $subsetASSFontArr[$filename2], $fontInfoArr, $arr[1], $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
 							if ($isDownloadSubsetSubtitleWithSeparateFont) {
 								// 仅 Subset Font 模式下, subsetFontASSContent 实际被当作 subsetFontContent 使用.

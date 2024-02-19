@@ -2,6 +2,12 @@
 require_once('uue.php');
 require_once('font.php');
 require_once('vendor/autoload.php');
+define('UTF8_BOM', (chr(0xEF) . chr(0xBB) . chr(0xBF)));
+define('UTF32_BIG_ENDIAN_BOM', (chr(0x00) . chr(0x00) . chr(0xFE) . chr(0xFF)));
+define('UTF32_LITTLE_ENDIAN_BOM', (chr(0xFF) . chr(0xFE) . chr(0x00) . chr(0x00)));
+define('UTF16_BIG_ENDIAN_BOM', (chr(0xFE) . chr(0xFF)));
+define('UTF16_LITTLE_ENDIAN_BOM', (chr(0xFF) . chr(0xFE)));
+
 function GenerateRandomString($length) {
 	$characters = '0123456789abcdefghijklmnopqrstuvwxyz';
 	$charactersLength = strlen($characters);
@@ -23,6 +29,31 @@ function AddFontDownloadHistory(string $source, int $uid, int $torrentID, int $d
 	}
 	$stmt->closeCursor();
 	return true;
+}
+function ConvertEncode(string $text) {
+	$first2 = substr($text, 0, 2);
+	$first3 = substr($text, 0, 3);
+	$first4 = substr($text, 0, 3);
+
+	$encodeType = '';
+	if ($first3 === UTF8_BOM) {
+		return str_replace("\xEF\xBB\xBF" , '', $text);
+	}
+	if ($first4 === UTF32_BIG_ENDIAN_BOM) {
+		$encodeType = 'UTF-32BE';
+	} else if ($first4 === UTF32_LITTLE_ENDIAN_BOM) {
+		$encodeType = 'UTF-32LE';
+	} else if ($first2 === UTF16_BIG_ENDIAN_BOM) {
+		$encodeType = 'UTF-16BE';
+	} else if ($first2 === UTF16_LITTLE_ENDIAN_BOM) {
+		$encodeType = 'UTF-16LE';
+	}
+
+	if ($encodeType === '') {
+		return mb_convert_encoding($text, 'UTF-8', ['UTF-8', 'ASCII', 'GB18030', 'BIG-5', 'SJIS', 'EUC-JP']);
+	}
+
+	return mb_convert_encoding($text, 'UTF-8', $encodeType);
 }
 function GetUniqueChar(string &$subsetASSContent, array &$uniqueChar) {
 	$uniqueChar = array_unique(array_merge($uniqueChar, preg_split('//u', $subsetASSContent, -1, PREG_SPLIT_NO_EMPTY)), SORT_REGULAR);
