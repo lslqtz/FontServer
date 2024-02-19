@@ -2,9 +2,6 @@
 require_once('config.php');
 if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
 	//if (!isset(SourcePolicy[$_GET['source']])) {
-	if ($_GET['source'] !== 'MDU') {
-		dieHTML("坏来源!\n", 'Login');
-	}
 	if (!is_numeric($_GET['uid']) || !is_numeric($_GET['time'])) {
 		dieHTML("坏参数!\n", 'Login');
 	}

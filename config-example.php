@@ -12,6 +12,7 @@ define('CompressLevel', 3);
 define('SourcePolicy', array(
 	'FontServer' => array(
 		'key' => 'FontServer',
+		'AllowLogin' => true,
 		'AllowDownloadFont' => false,
 		'AllowDownloadSubsetSubtitle' => true,
 		'AllowDownloadSubsetSubtitleWithSeparateFont' => true,
@@ -49,7 +50,9 @@ function CheckLogin(string $source, int $uid, int $timestamp, string $sign): boo
 function IsLogin(): ?array {
 	// Return sourcePolicy.
 	if (isset($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')]) && CheckLogin($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')])) {
-		return SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]];
+		if (SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]['AllowLogin']) {
+			return SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]];
+		}
 	}
 	return null;
 }
