@@ -42,6 +42,18 @@ function GetFontPath(string $fontfile): ?string {
 	}
 	return null;
 }
+function GenerateSign(string $source, int $uid, int $torrentID, int $timestamp, string $filename, string $filehash): ?string {
+	if (!isset(SourcePolicy[$source])) {
+		return null;
+	}
+	return sha1(SourcePolicy[$source]['key'] . "Download/{$source}_{$uid}-{$torrentID}-{$timestamp}-{$filename}-{$filehash}" . SourcePolicy[$source]['key']);
+}
+function CheckSign(string $source, int $uid, int $torrentID, int $timestamp, string $sign, string $filename, string $filehash): ?string {
+	if ($sign !== sha1(SourcePolicy[$source]['key'] . "Download/{$source}_{$uid}-{$torrentID}-{$timestamp}-{$filename}-{$filehash}" . SourcePolicy[$source]['key']) || ($timestamp + DownloadExpireTime) < time()) {
+		return null;
+	}
+	return $sign;
+}
 function CheckLogin(string $source, int $uid, int $timestamp, string $sign): bool {
 	if ($sign !== sha1(SourcePolicy[$source]['key'] . "Login/{$source}_{$uid}-{$timestamp}" . SourcePolicy[$source]['key']) || ($timestamp + LoginExpireTime) < time()) {
 		return false;
@@ -89,7 +101,7 @@ function dieHTML(string $string, string $prefix = '') {
 	HTMLEnd();
 	die();
 }
-function ShowTable(array $fontsResult, bool $foundFont = true, bool $allowDownloadFont = false) {
+function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadFontArr = null) {
 	echo "<p>" . ($foundFont ? '找到字体数: ' : '缺失字体数: ') . count($fontsResult) . "</p>\n";
 	echo "<div class=\"searchResult\">\n<table border=\"2\">\n";
 	echo "<thead>\n<tr>\n";
@@ -107,8 +119,8 @@ function ShowTable(array $fontsResult, bool $foundFont = true, bool $allowDownlo
 		echo "<tr style=\"height: 42px; white-space: pre-line;\">\n";
 		echo "<td>{$fontResult['id']}</td>\n";
 		echo "<td>{$fontResult['uploader']}</td>\n";
-		if ($allowDownloadFont) {
-			echo "<td><a href=\"download.php?font_id={$fontResult['id']}\">{$fontResult['fontfile']}</a></td>\n";
+		if ($downloadFontArr !== null && ($sign = GenerateSign($downloadFontArr[0], $downloadFontArr[1], $downloadFontArr[2], $downloadFontArr[3], $fontResult['fontfile'], sha1($fontResult['id']))) !== null) {
+			echo "<td><a href=\"download.php?source={$downloadFontArr[0]}&uid={$downloadFontArr[1]}&torrent_id={$downloadFontArr[2]}&time={$downloadFontArr[3]}&sign={$sign}&filename={$fontResult['fontfile']}&font_id={$fontResult['id']}\">{$fontResult['fontfile']}</a></td>\n";
 		} else {
 			echo "<td>{$fontResult['fontfile']}</td>\n";
 		}

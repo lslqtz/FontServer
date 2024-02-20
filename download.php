@@ -4,13 +4,7 @@ require_once('ass.php');
 require_once('vendor/autoload.php');
 ini_set('memory_limit', MaxMemoryMB . 'M');
 
-function CheckSign(string $source, int $uid, int $torrentID, int $timestamp, string $sign, string $filename, string $fileExt, string $filehash): ?string {
-	if ($sign !== sha1(SourcePolicy[$source]['key'] . "Download/{$source}_{$uid}-{$torrentID}-{$timestamp}-{$filename}.{$fileExt}-{$filehash}" . SourcePolicy[$source]['key']) || ($timestamp + DownloadExpireTime) < time()) {
-		return null;
-	}
-	return $sign;
-}
-if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_GET['sign'], $_GET['filename']) && !empty($_POST['file'])) {
+if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_GET['sign'], $_GET['filename'])) {
 	if (!isset(SourcePolicy[$_GET['source']])) {
 		dieHTML("坏来源!\n", 'Download');
 	}
@@ -23,25 +17,45 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 		dieHTML("坏文件名!\n", 'Download');
 	}
 	$fileExt = $fileInfo['extension'];
-	if (!in_array($fileExt, ['ass', 'ssa', 'zip'])) {
-		dieHTML("坏扩展名!\n", 'Download');
-	}
 	$source = $_GET['source'];
 	$uid = intval($_GET['uid']);
 	$torrentID = intval($_GET['torrent_id']);
 	$timestamp = intval($_GET['time']);
-	$sign = CheckSign($source, $uid, $torrentID, $timestamp, $_GET['sign'], $filename, $fileExt, sha1($_POST['file']));
-	if ($sign === null) {
-		dieHTML("坏签名!\n", 'Download');
+	$rawSign = $_GET['sign'];
+	$sourcePolicy = SourcePolicy[$source];
+	if (isset($_GET['font_id'])) {
+		if (!is_numeric($_GET['font_id'])) {
+			dieHTML("坏参数!\n", 'Download');
+		}
+		if (!$sourcePolicy['AllowDownloadFont']) {
+			dieHTML("下载字体功能当前被停用!\n", 'Download');
+		}
+		$fontID = intval($_GET['font_id']);
+		$sign = CheckSign($source, $uid, $torrentID, $timestamp, $rawSign, "{$filename}.{$fileExt}", sha1($fontID));
+		if ($sign === null) {
+			dieHTML("坏签名!\n", 'Download');
+		}
+		$fontFile = GetFontFileByID($fontID);
+		if ($fontFile === null || ($fontPath = GetFontPath($fontFile)) === null) {
+			dieHTML("找不到字体!\n", 'Download');
+		}
+		AddFontDownloadHistory($source, $uid, 0, $fontID);
+		header('X-Accel-Buffering: no');
+		header("X-Accel-Redirect: /{$fontPath}");
+		header("Content-Disposition: attachment; filename=" . rawurlencode($fontFile) . "; filename*=utf-8''" . rawurlencode($fontFile));
+		die();
+	}
+	if (empty($_POST['file'])) {
+		dieHTML("坏参数!\n", 'Download');
+	}
+	if (!in_array($fileExt, ['ass', 'ssa', 'zip'])) {
+		dieHTML("坏扩展名!\n", 'Download');
 	}
 
-	$fontArr = [];
-	$fontnameArr = [];
-	$sourcePolicy = SourcePolicy[$source];
 	$isDownload = ((isset($_GET['download']) && $_GET['download'] == 1) ? true : false);
 	$isDownloadFont = (($isDownload && (isset($_GET['mode']) && $_GET['mode'] === 'font')) ? true : false);
 	if ($isDownloadFont && !$sourcePolicy['AllowDownloadFontArchive']) {
-		dieHTML("下载字体功能当前被停用!\n", 'Download');
+		dieHTML("下载打包字体功能当前被停用!\n", 'Download');
 	}
 	$isDownloadSubsetSubtitle = (($isDownload && !$isDownloadFont && (isset($_GET['mode']) && $_GET['mode'] === 'subsetSubtitle')) ? true : false);
 	if ($isDownloadSubsetSubtitle && !$sourcePolicy['AllowDownloadSubsetSubtitle']) {
@@ -51,6 +65,14 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	if ($isDownloadSubsetSubtitleWithSeparateFont && !$sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
 		dieHTML("下载自动子集化字幕 (非嵌入字体) 功能当前被停用!\n", 'Download');
 	}
+
+	$sign = CheckSign($source, $uid, $torrentID, $timestamp, $rawSign, "{$filename}.{$fileExt}", sha1($_POST['file']));
+	if ($sign === null) {
+		dieHTML("坏签名!\n", 'Download');
+	}
+
+	$fontArr = [];
+	$fontnameArr = [];
 
 	if (($decodedUploadFile = base64_decode($_POST['file'])) === false || empty($decodedUploadFile)) {
 		dieHTML("坏文件!\n", 'Download');
@@ -333,27 +355,8 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 		echo "</form>\n";
 	}
 	echo "<p>字体数: " . count($fontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
-	ShowTable($fontArr, true, $sourcePolicy['AllowDownloadFont']);
+	ShowTable($fontArr, true, ($sourcePolicy['AllowDownloadFont'] ? [$source, $uid, $torrentID, $timestamp] : null));
 	HTMLEnd();
-} else if (isset($_GET['font_id'])) {
-	if (!is_numeric($_GET['font_id'])) {
-		dieHTML("坏参数!\n", 'Download');
-	}
-	$sourcePolicy = IsLogin();
-	if ($sourcePolicy === null) {
-		dieHTML(":(\n", 'Download');
-	}
-	if (!$sourcePolicy[2]['AllowDownloadFont']) {
-		dieHTML("下载字体功能当前被停用!\n", 'Download');
-	}
-	$fontFile = GetFontFileByID($_GET['font_id']);
-	if ($fontFile === null || ($fontPath = GetFontPath($fontFile)) === null) {
-		dieHTML("找不到字体!\n", 'Download');
-	}
-	AddFontDownloadHistory($sourcePolicy[0], $sourcePolicy[1], 0, intval($_GET['font_id']));
-	header('X-Accel-Buffering: no');
-	header("X-Accel-Redirect: /{$fontPath}");
-	header("Content-Disposition: attachment; filename=" . rawurlencode($fontFile) . "; filename*=utf-8''" . rawurlencode($fontFile));
 } else {
 	dieHTML(":(\n", 'Download');
 }

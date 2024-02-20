@@ -37,7 +37,7 @@ echo <<<html
 		</div>
 html;
 if (isset($_POST['fontname'])) {
-	ShowTable(SearchFonts($minSearchLength, $sourcePolicy[2]['MaxSearchFontCount'], $_POST['fontname']), true, $sourcePolicy[2]['AllowDownloadFont']);
+	ShowTable(SearchFonts($minSearchLength, $sourcePolicy[2]['MaxSearchFontCount'], $_POST['fontname']), true, ($sourcePolicy[2]['AllowDownloadFont'] ? [$sourcePolicy[0], $sourcePolicy[1], 0, time()] : null));
 }
 HTMLEnd();
 ?>
