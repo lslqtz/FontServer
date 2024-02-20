@@ -75,11 +75,12 @@ function CheckSign(string $source, int $uid, int $torrentID, int $timestamp, str
 	}
 	return $sign;
 }
-function HTMLStart(string $prefix = '') {
+function HTMLStart(string $prefix = '', string $userbar = null) {
 	$title = Title;
 	if ($prefix !== '') {
 		$title = "{$prefix} - {$title}";
 	}
+	$userbar = ($userbar !== null ? "<p>{$userbar}</p>" : '');
 	echo <<<html
 	<!DOCTYPE html>
 	<html>
@@ -91,7 +92,10 @@ function HTMLStart(string $prefix = '') {
 			<title>{$title}</title>
 		</head>
 		<body>
-			<h2 style="margin: 0;">{$title}</h2>
+			<div class="header">
+				<h2>{$title}</h2>
+				{$userbar}
+			</div>
 			<hr>
 html;
 }

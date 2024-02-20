@@ -26,7 +26,7 @@ if ($sourcePolicy === null) {
 	dieHTML(":(\n", 'Search');
 }
 $minSearchLength = $sourcePolicy[2]['MinSearchLength'];
-HTMLStart('Search');
+HTMLStart('Search', GetUserBar($sourcePolicy[0], $sourcePolicy[1]));
 echo <<<html
 		<div class="searchBox">
 			<form role="serach" method="POST">

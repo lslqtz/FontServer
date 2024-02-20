@@ -12,6 +12,14 @@ function IsLogin(): ?array {
 	}
 	return null;
 }
+function GetUserBar(string $source, int $userID): string {
+	if ($source === 'Public') {
+		if (($username = GetUsernameByID($userID)) !== null) {
+			return "{$username} (UID: {$userID})";
+		}
+	}
+	return "{$source} 用户 (UID: {$userID})";
+}
 function GenerateLoginSign(string $source, int $uid, int $timestamp): string {
 	return sha1(SourcePolicy[$source]['key'] . "Login/{$source}_{$uid}-{$timestamp}" . SourcePolicy[$source]['key']);
 }
@@ -20,6 +28,27 @@ function CheckLoginBySign(string $source, int $uid, int $timestamp, string $sign
 		return false;
 	}
 	return true;
+}
+function GetUsernameByID(int $userID): ?string {
+	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+		return null;
+	}
+	$stmt = $db->prepare("SELECT `username` FROM `users` WHERE `status` = 1 AND `id` = ? LIMIT 1");
+	try {
+		if (!$stmt->execute([$userID])) {
+			return null;
+		}
+	} catch (Throwable $e) {
+		return null;
+	}
+	$username = $stmt->fetchColumn(0);
+	$stmt->closeCursor();
+
+	return ($username !== false ? $username : null);
 }
 function CheckLoginByUsername(string $username, string $password): int {
 	global $db;

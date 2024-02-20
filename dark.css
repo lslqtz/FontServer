@@ -4,6 +4,17 @@ a, p, h1, h2, h3, h4, h5, h6, input, button, label, legend, fieldset, textarea, 
 a {
 	color: royalblue;
 }
+.header {
+	display: flex;
+}
+.header h2, .header p {
+	margin: 0;
+	display: flex;
+	align-items: center;
+}
+.header p {
+	margin-left: auto;
+}
 .downloadLink {
 	margin-top: 8px;
 	margin-bottom: 8px;
