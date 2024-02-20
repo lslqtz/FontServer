@@ -23,7 +23,7 @@ function SendMail(string $receiver, string $subject, string $content): bool {
 
 		$mail->CharSet = PHPMailer::CHARSET_UTF8;
 
-		$mail->setFrom(SMTPUsername, 'FontServer');
+		$mail->setFrom(SMTPUsername, Title);
 		$mail->addAddress($receiver);
 
 		$mail->isHTML(false);

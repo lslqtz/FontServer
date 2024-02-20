@@ -12,13 +12,13 @@ function IsLogin(): ?array {
 	}
 	return null;
 }
-function GetUserBar(string $source, int $userID): string {
+function GetUserBar(string $source, int $userID, bool $allowLogout = false): string {
 	if ($source === 'Public') {
 		if (($username = GetUsernameByID($userID)) !== null) {
-			return "{$username} (UID: {$userID})";
+			return "你好, {$username} (UID: {$userID})" . ($allowLogout ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
 		}
 	}
-	return "{$source} 用户 (UID: {$userID})";
+	return "你好, {$source} 用户 (UID: {$userID})";
 }
 function GenerateLoginSign(string $source, int $uid, int $timestamp): string {
 	return sha1(SourcePolicy[$source]['key'] . "Login/{$source}_{$uid}-{$timestamp}" . SourcePolicy[$source]['key']);
@@ -120,6 +120,6 @@ function GetActivationCode(int $userID, string $email, int $timestamp): string {
 function SendActivationEmail(int $userID, string $username, string $email) {
 	$t = time();
 	$activationCode = GetActivationCode($userID, $email, $t);
-	SendMail($email, '账号激活邮件', "你好, {$username}. 你收到此邮件是因为你需要激活在 FontServer 注册的账号.\n\n若为本人操作, 请点击下方链接:\nhttp://font.acgvideo.cn/confirm.php?uid={$userID}&email=" . rawurlencode($email) . "&time={$t}&code={$activationCode}\n\n若非本人操作, 则无需采取任何行动.\n");
+	SendMail($email, '账号激活邮件', "你好, {$username}. 你收到此邮件是因为你需要激活在 " . Title . " 注册的账号.\n\n若为本人操作, 请点击下方链接:\nhttp://font.acgvideo.cn/confirm.php?uid={$userID}&email=" . rawurlencode($email) . "&time={$t}&code={$activationCode}\n\n若非本人操作, 则无需采取任何行动.\n");
 }
 ?>

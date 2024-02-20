@@ -23,10 +23,12 @@ function SearchFonts(int $minSearchLength, int $maxSearchFontCount, string $font
 }
 $sourcePolicy = IsLogin();
 if ($sourcePolicy === null) {
-	dieHTML(":(\n", 'Search');
+	header('HTTP/1.1 302 Found');
+	header('Location: login.php');
+	die();
 }
 $minSearchLength = $sourcePolicy[2]['MinSearchLength'];
-HTMLStart('Search', GetUserBar($sourcePolicy[0], $sourcePolicy[1]));
+HTMLStart('Search', GetUserBar($sourcePolicy[0], $sourcePolicy[1], ($sourcePolicy[0] === 'Public')));
 echo <<<html
 		<div class="searchBox">
 			<form role="serach" method="POST">

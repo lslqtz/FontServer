@@ -1,7 +1,17 @@
 <?php
 require_once('config.php');
 require_once('user.php');
-if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
+if (isset($_GET['logout']) && $_GET['logout'] == 1) {
+	if (isset($_COOKIE[(CookieName . '_' . 'Source')]) && $_COOKIE[(CookieName . '_' . 'Source')] === 'Public') {
+		setcookie(CookieName . '_Source', '', -1);
+		setcookie(CookieName . '_UID', '', -1);
+		setcookie(CookieName . '_Time', '', -1);
+		setcookie(CookieName . '_Sign', '', -1);
+	}
+	header('HTTP/1.1 302 Found');
+	header('Location: /');
+	die();
+} else if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
 	//if (!isset(SourcePolicy[$_GET['source']])) {
 	if (!is_numeric($_GET['uid']) || !is_numeric($_GET['time'])) {
 		dieHTML("坏参数!\n", 'Login');
