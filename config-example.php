@@ -14,6 +14,7 @@ define('SourcePolicy', array(
 		'key' => 'FontServer',
 		'AllowLogin' => true,
 		'AllowDownloadFont' => false,
+		'AllowDownloadFontArchive' => false,
 		'AllowDownloadSubsetSubtitle' => true,
 		'AllowDownloadSubsetSubtitleWithSeparateFont' => true,
 		'ProcessFontForEverySubtitle' => true, // false: High memory consumption, true: High performance consumption.

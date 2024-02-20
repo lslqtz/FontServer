@@ -40,7 +40,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	$sourcePolicy = SourcePolicy[$source];
 	$isDownload = ((isset($_GET['download']) && $_GET['download'] == 1) ? true : false);
 	$isDownloadFont = (($isDownload && (isset($_GET['mode']) && $_GET['mode'] === 'font')) ? true : false);
-	if ($isDownloadFont && !$sourcePolicy['AllowDownloadFont']) {
+	if ($isDownloadFont && !$sourcePolicy['AllowDownloadFontArchive']) {
 		dieHTML("下载字体功能当前被停用!\n", 'Download');
 	}
 	$isDownloadSubsetSubtitle = (($isDownload && !$isDownloadFont && (isset($_GET['mode']) && $_GET['mode'] === 'subsetSubtitle')) ? true : false);
@@ -317,11 +317,11 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	HTMLStart('Download');
 	echo "<script src=\"base64.js\"></script>\n";
 	echo "<script>function Download(target, filename = null) { switch (target) { case 'font': case 'subsetSubtitle': case 'subsetSubtitleWithSeparateFont': break; case 'originalSubtitle':  let blob = new Blob([Base64.toUint8Array(downloadForm.querySelector('input[name=\"file\"]').value)]); let ele = document.createElement('a'); ele.setAttribute('download', filename); ele.href = window.URL.createObjectURL(blob); document.body.appendChild(ele); ele.click(); ele.remove(); return; default: console.log('Bad target: ' + target); return; break; } downloadForm.action = downloadForm.action.replace(/(&|\?)download=(1|0)/, '').replace(/(&|\?)mode=(font|subsetSubtitleWithSeparateFont|subsetSubtitle)/i, ''); downloadForm.action += ('&download=1&mode=' + target); downloadForm.submit(); }</script>\n";
-	if ($sourcePolicy['AllowDownloadFont'] || $sourcePolicy['AllowDownloadSubsetSubtitle'] || $sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
+	if ($sourcePolicy['AllowDownloadFontArchive'] || $sourcePolicy['AllowDownloadSubsetSubtitle'] || $sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
 		echo "<form id=\"downloadForm\" method=\"POST\">\n";
 		echo "<input type=\"hidden\" name=\"file\" value=\"{$_POST['file']}\" />\n";
 		echo "<p><a href=\"javascript:Download('originalSubtitle', '" . htmlspecialchars("{$filename}.{$fileExt}") . "');\">下载原始字幕!</a></p>\n";
-		if ($sourcePolicy['AllowDownloadFont']) {
+		if ($sourcePolicy['AllowDownloadFontArchive']) {
 			echo "<p><a href=\"javascript:Download('font');\">下载打包字体!</a></p>\n";
 		}
 		if ($sourcePolicy['AllowDownloadSubsetSubtitle']) {
