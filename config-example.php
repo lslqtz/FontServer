@@ -27,7 +27,7 @@ define('SourcePolicy', array(
 define('CookieName', 'FontServer-Auth');
 define('LoginExpireTime', 3600);
 define('DownloadExpireTime', 300);
-define('FontPath', array('../font', '../fontoss/xz'));
+define('FontPath', array('font', 'fontoss/xz'));
 define('SysCacheDir', sys_get_temp_dir());
 
 function GetMainFontPath(string $fontfile): string {
@@ -51,7 +51,7 @@ function IsLogin(): ?array {
 	// Return sourcePolicy.
 	if (isset($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')]) && CheckLogin($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')])) {
 		if (SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]['AllowLogin']) {
-			return SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]];
+			return [$_COOKIE[(CookieName . '_' . 'Source')], intval($_COOKIE[(CookieName . '_' . 'UID')]), SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]];
 		}
 	}
 	return null;

@@ -350,9 +350,10 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	if ($fontFile === null || ($fontPath = GetFontPath($fontFile)) === null) {
 		dieHTML("找不到字体!\n", 'Download');
 	}
-	AddFontDownloadHistory(Title, $sourcePolicy[0], 0, intval($_GET['font_id']));
+	AddFontDownloadHistory($sourcePolicy[0], $sourcePolicy[1], 0, intval($_GET['font_id']));
 	header('X-Accel-Buffering: no');
-	header("X-Accel-Redirect: {$fontPath}");
+	header("X-Accel-Redirect: /{$fontPath}");
+	header("Content-Disposition: attachment; filename=" . rawurlencode($fontFile) . "; filename*=utf-8''" . rawurlencode($fontFile));
 } else {
 	dieHTML(":(\n", 'Download');
 }

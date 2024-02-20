@@ -18,8 +18,14 @@ function GetAllFontsFilename(string $fontdir) {
 	);
 	return $files;
 }
-function AddFontDownloadHistory(string $source, int $uid, int $torrentID, int $downloadID) {
+function AddFontDownloadHistory(string $source, int $uid, int $torrentID, int $downloadID): bool {
 	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+		return false;
+	}
 	$stmt = $db->prepare("INSERT INTO `download_history` (`source`, `user_id`, `torrent_id`, `download_id`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `source` = VALUES(`source`), `user_id` = VALUES(`user_id`), `torrent_id` = VALUES(`torrent_id`), `download_id` = VALUES(`download_id`), `updated_at` = CURRENT_TIMESTAMP()");
 	try {
 		if (!$stmt->execute([$source, $uid, $torrentID, $downloadID])) {
@@ -110,6 +116,11 @@ function DeleteFontByFilename(string $filename) {
 }
 function GetFontFileByID(int $fontID): ?string {
 	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+	}
 	$stmt = $db->prepare("SELECT `fontfile` FROM `fonts_meta` WHERE `id` = ? LIMIT 1");
 	try {
 		if (!$stmt->execute($fontID)) {
@@ -129,6 +140,11 @@ function GetFontFileByID(int $fontID): ?string {
 }
 function GetFontByNameArr(int $maxDownloadFontCount, array $fontname): array {
 	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+	}
 	if (count($fontname) < 1 || !ConnectDB()) {
 		return [];
 	}
@@ -171,6 +187,11 @@ function GetFontByNameArr(int $maxDownloadFontCount, array $fontname): array {
 }
 function GetFontIDByFilename(string $filename): int {
 	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+	}
 	if (!empty($filename)) {
 		$stmt = $db->prepare("SELECT `id` FROM `fonts_meta` WHERE `fontfile` = ? LIMIT 1");
 		try {
@@ -193,6 +214,11 @@ function GetFontIDByFilename(string $filename): int {
 }
 function DetectDuplicateFont(string $fontext, ?string $fontname, ?string $fontfullname, ?string $fontsubfamily, bool $deleteWorseExt = false): array {
 	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+	}
 	if (empty($fontfullname)) {
 		if (empty($fontname)) {
 			return [-1];

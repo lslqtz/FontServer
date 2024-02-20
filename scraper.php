@@ -12,11 +12,11 @@ function LogStr(string $message, int $status = 0) {
 	$logStr = "[{$date} {$time}][{$logType}] {$message}.\n";
 	echo $logStr;
 }
-if (!is_dir('../font2')) {
-	LogStr('找不到 ../font2 目录', -1);
+if (!is_dir('font2')) {
+	LogStr('找不到 font2 目录', -1);
 	return;
 }
-$fontfiles = GetAllFontsFilename('../font2');
+$fontfiles = GetAllFontsFilename('font2');
 foreach ($fontfiles as $fontfile) {
 	$oldFontPath = $fontfile->getPathname();
 	if (!is_file($oldFontPath)) {
