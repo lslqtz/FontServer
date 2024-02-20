@@ -94,7 +94,7 @@ function DeleteFontByFilename(string $filename) {
 		DeleteFontByID($fontID);
 	}
 }
-function GetFont(int $maxDownloadFontCount, array $fontname): array {
+function GetFontByNameArr(int $maxDownloadFontCount, array $fontname): array {
 	global $db;
 	if (count($fontname) < 1 || !ConnectDB()) {
 		return [];

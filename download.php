@@ -77,7 +77,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 			if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				dieHTML("太多的字体!\n", 'Download');
 			}
-			$fontArr = GetFont($sourcePolicy['MaxDownloadFontCount'], $fontnameArr);
+			$fontArr = GetFontByNameArr($sourcePolicy['MaxDownloadFontCount'], $fontnameArr);
 			if (count($fontArr) <= 0) {
 				dieHTML("找不到字体!\n<p>字体数: " . count($fontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n", 'Download');
 			}
@@ -214,7 +214,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 				if ((memory_get_peak_usage() / 1024 / 1024) > ceil(MaxMemoryMB / 1.5)) {
 					dieHTML("无法处理这个字幕! (Error: 1)\n", 'Download');
 				}
-				$subsetASSFontArr[$filename2] = GetFont($sourcePolicy['MaxDownloadFontCount'], $arr[0]);
+				$subsetASSFontArr[$filename2] = GetFontByNameArr($sourcePolicy['MaxDownloadFontCount'], $arr[0]);
 				$fontArr = array_unique(array_merge($fontArr, $subsetASSFontArr[$filename2]), SORT_REGULAR);
 				unset($arr[0]);
 			}
