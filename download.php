@@ -343,13 +343,14 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	if ($sourcePolicy === null) {
 		dieHTML(":(\n", 'Download');
 	}
-	if (!$sourcePolicy['AllowDownloadFont']) {
+	if (!$sourcePolicy[2]['AllowDownloadFont']) {
 		dieHTML("下载字体功能当前被停用!\n", 'Download');
 	}
 	$fontFile = GetFontFileByID($_GET['font_id']);
 	if ($fontFile === null || ($fontPath = GetFontPath($fontFile)) === null) {
 		dieHTML("找不到字体!\n", 'Download');
 	}
+	AddFontDownloadHistory(Title, $sourcePolicy[0], 0, intval($_GET['font_id']));
 	header('X-Accel-Buffering: no');
 	header("X-Accel-Redirect: {$fontPath}");
 } else {

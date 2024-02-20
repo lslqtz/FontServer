@@ -3,6 +3,7 @@ require_once('config.php');
 require_once('mysql.php');
 require_once('vendor/autoload.php');
 define('BetterExt', ['ttf', 'ttc']);
+
 function GetAllFontsFilename(string $fontdir) {
 	$dir = new RecursiveDirectoryIterator(
 	    $fontdir,
@@ -16,6 +17,19 @@ function GetAllFontsFilename(string $fontdir) {
 	    RegexIterator::USE_KEY
 	);
 	return $files;
+}
+function AddFontDownloadHistory(string $source, int $uid, int $torrentID, int $downloadID) {
+	global $db;
+	$stmt = $db->prepare("INSERT INTO `download_history` (`source`, `user_id`, `torrent_id`, `download_id`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `source` = VALUES(`source`), `user_id` = VALUES(`user_id`), `torrent_id` = VALUES(`torrent_id`), `download_id` = VALUES(`download_id`), `updated_at` = CURRENT_TIMESTAMP()");
+	try {
+		if (!$stmt->execute([$source, $uid, $torrentID, $downloadID])) {
+			return false;
+		}
+	} catch (Throwable $e) {
+		return false;
+	}
+	$stmt->closeCursor();
+	return true;
 }
 function AddFontMeta(int $uploader, string $fontfile, int $fontsize, bool $force = false): int {
 	global $db;

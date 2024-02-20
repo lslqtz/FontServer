@@ -17,19 +17,6 @@ function GenerateRandomString($length) {
 	}
 	return $randomString;
 }
-function AddFontDownloadHistory(string $source, int $uid, int $torrentID, int $downloadID) {
-	global $db;
-	$stmt = $db->prepare("INSERT INTO `download_history` (`source`, `user_id`, `torrent_id`, `download_id`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `source` = VALUES(`source`), `user_id` = VALUES(`user_id`), `torrent_id` = VALUES(`torrent_id`), `download_id` = VALUES(`download_id`), `updated_at` = CURRENT_TIMESTAMP()");
-	try {
-		if (!$stmt->execute([$source, $uid, $torrentID, $downloadID])) {
-			return false;
-		}
-	} catch (Throwable $e) {
-		return false;
-	}
-	$stmt->closeCursor();
-	return true;
-}
 function ConvertEncode(string $text) {
 	$first2 = substr($text, 0, 2);
 	$first3 = substr($text, 0, 3);

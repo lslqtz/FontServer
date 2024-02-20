@@ -15,8 +15,8 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
 	}
 	$expireTime = (time() + 86400);
 	setcookie(CookieName . '_Source', $_GET['source'], $expireTime);
-	setcookie(CookieName . '_UID', $_GET['uid'], $expireTime);
-	setcookie(CookieName . '_Time', $_GET['time'], $expireTime);
+	setcookie(CookieName . '_UID', intval($_GET['uid']), $expireTime);
+	setcookie(CookieName . '_Time', intval($_GET['time']), $expireTime);
 	setcookie(CookieName . '_Sign', $_GET['sign'], $expireTime);
 	header('HTTP/1.1 302 Found');
 	header('Location: /search.php');

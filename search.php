@@ -24,7 +24,7 @@ $sourcePolicy = IsLogin();
 if ($sourcePolicy === null) {
 	dieHTML(":(\n", 'Search');
 }
-$minSearchLength = $sourcePolicy['MinSearchLength'];
+$minSearchLength = $sourcePolicy[2]['MinSearchLength'];
 HTMLStart('Search');
 echo <<<html
 		<div class="searchBox">
@@ -37,7 +37,7 @@ echo <<<html
 		</div>
 html;
 if (isset($_POST['fontname'])) {
-	ShowTable(SearchFonts($minSearchLength, $sourcePolicy['MaxSearchFontCount'], $_POST['fontname']), true, $sourcePolicy['AllowDownloadFont']);
+	ShowTable(SearchFonts($minSearchLength, $sourcePolicy[2]['MaxSearchFontCount'], $_POST['fontname']), true, $sourcePolicy[2]['AllowDownloadFont']);
 }
 HTMLEnd();
 ?>
