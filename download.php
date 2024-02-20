@@ -322,7 +322,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 		echo "<input type=\"hidden\" name=\"file\" value=\"{$_POST['file']}\" />\n";
 		echo "<p><a href=\"javascript:Download('originalSubtitle', '" . htmlspecialchars("{$filename}.{$fileExt}") . "');\">下载原始字幕!</a></p>\n";
 		if ($sourcePolicy['AllowDownloadFont']) {
-			echo "<p><a href=\"javascript:Download('font');\">下载字体!</a></p>\n";
+			echo "<p><a href=\"javascript:Download('font');\">下载打包字体!</a></p>\n";
 		}
 		if ($sourcePolicy['AllowDownloadSubsetSubtitle']) {
 			echo "<p><a href=\"javascript:Download('subsetSubtitle');\">下载自动子集化字幕 (推荐, 嵌入字体)!</a></p>\n";
@@ -333,8 +333,25 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 		echo "</form>\n";
 	}
 	echo "<p>字体数: " . count($fontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
-	ShowTable($fontArr);
+	ShowTable($fontArr, true, $sourcePolicy['AllowDownloadFont']);
 	HTMLEnd();
+} else if (isset($_GET['font_id'])) {
+	if (!is_numeric($_GET['font_id'])) {
+		dieHTML("坏参数!\n", 'Download');
+	}
+	$sourcePolicy = IsLogin();
+	if ($sourcePolicy === null) {
+		dieHTML(":(\n", 'Download');
+	}
+	if (!$sourcePolicy['AllowDownloadFont']) {
+		dieHTML("下载字体功能当前被停用!\n", 'Download');
+	}
+	$fontFile = GetFontFileByID($_GET['font_id']);
+	if ($fontFile === null || ($fontPath = GetFontPath($fontFile)) === null) {
+		dieHTML("找不到字体!\n", 'Download');
+	}
+	header('X-Accel-Buffering: no');
+	header("X-Accel-Redirect: {$fontPath}");
 } else {
 	dieHTML(":(\n", 'Download');
 }

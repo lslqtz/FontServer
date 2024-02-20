@@ -88,7 +88,7 @@ function dieHTML(string $string, string $prefix = '') {
 	HTMLEnd();
 	die();
 }
-function ShowTable(array $fontsResult, bool $foundFont = true) {
+function ShowTable(array $fontsResult, bool $foundFont = true, bool $allowDownloadFont = false) {
 	echo "<p>" . ($foundFont ? '找到字体数: ' : '缺失字体数: ') . count($fontsResult) . "</p>\n";
 	echo "<div class=\"searchResult\">\n<table border=\"2\">\n";
 	echo "<thead>\n<tr>\n";
@@ -106,7 +106,11 @@ function ShowTable(array $fontsResult, bool $foundFont = true) {
 		echo "<tr style=\"height: 42px; white-space: pre-line;\">\n";
 		echo "<td>{$fontResult['id']}</td>\n";
 		echo "<td>{$fontResult['uploader']}</td>\n";
-		echo "<td>{$fontResult['fontfile']}</td>\n";
+		if ($allowDownloadFont) {
+			echo "<td><a href=\"download.php?font_id={$fontResult['id']}\">{$fontResult['fontfile']}</a></td>\n";
+		} else {
+			echo "<td>{$fontResult['fontfile']}</td>\n";
+		}
 		echo "<td>{$fontResult['fontname']}</td>\n";
 		echo "<td>{$fontResult['fontfullname']}</td>\n";
 		echo "<td>{$fontResult['fontpsname']}</td>\n";

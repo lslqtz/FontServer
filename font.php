@@ -94,6 +94,25 @@ function DeleteFontByFilename(string $filename) {
 		DeleteFontByID($fontID);
 	}
 }
+function GetFontFileByID(int $fontID): ?string {
+	global $db;
+	$stmt = $db->prepare("SELECT `fontfile` FROM `fonts_meta` WHERE `id` = ? LIMIT 1");
+	try {
+		if (!$stmt->execute($fontID)) {
+			return null;
+		}
+	} catch (Throwable $e) {
+		return null;
+	}
+	$fontfile = $stmt->fetchColumn(0);
+	$stmt->closeCursor();
+
+	if ($fontfile === false) {
+		return null;
+	}
+
+	return $fontfile;
+}
 function GetFontByNameArr(int $maxDownloadFontCount, array $fontname): array {
 	global $db;
 	if (count($fontname) < 1 || !ConnectDB()) {
