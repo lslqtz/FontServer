@@ -1,14 +1,25 @@
 <?php
 set_time_limit(300);
 date_default_timezone_set('Asia/Shanghai');
-define('Title', 'MDU-FontServer');
+define('Title', 'FontServer');
+define('MaxMemoryMB', 1024);
+define('CompressLevel', 3);
 define('DBAddress', 'mysql:host=localhost;dbname=FontServer');
 define('DBUsername', 'FontServer');
 define('DBPassword', 'FontServer');
 define('DBPersistent', true);
+define('SMTPAddress', 'smtp.example.com');
+define('SMTPPort', 465);
+define('SMTPSSL', true);
+define('SMTPUsername', 'font@example.com');
+define('SMTPPassword', 'FontServer');
+define('CookieName', 'FontServer-Auth');
+define('LoginExpireTime', 3600);
+define('DownloadExpireTime', 300);
+define('EmailExpireTime', 3600);
+define('FontPath', array('font'));
+define('SysCacheDir', sys_get_temp_dir());
 define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
-define('MaxMemoryMB', 1024);
-define('CompressLevel', 3);
 define('SourcePolicy', array(
 	'Public' => array(
 		'key' => 'FontServer',
@@ -40,11 +51,6 @@ define('SourcePolicy', array(
 		'MaxSearchFontCount' => 100
 	)
 ));
-define('CookieName', 'FontServer-Auth');
-define('LoginExpireTime', 3600);
-define('DownloadExpireTime', 300);
-define('FontPath', array('font', 'fontoss/xz'));
-define('SysCacheDir', sys_get_temp_dir());
 
 function GetMainFontPath(string $fontfile): string {
 	return FontPath[0] . "/{$fontfile}";

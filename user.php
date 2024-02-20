@@ -1,6 +1,7 @@
 <?php
 require_once('config.php');
 require_once('mysql.php');
+require_once('mail.php');
 
 function IsLogin(): ?array {
 	// Return sourcePolicy.
@@ -61,7 +62,7 @@ function RegisterUser(string $username, string $email, string $password): bool {
 	$userID = $db->lastInsertId();
 	$stmt->closeCursor();
 
-	SendActivationEmail($userID, $email);
+	SendActivationEmail($userID, $username, $email);
 
 	return true;
 }
@@ -75,7 +76,9 @@ function ConfirmEmail(int $userID, string $email, int $timestamp, string $code):
 function GetActivationCode(int $userID, string $email, int $timestamp): string {
 	return sha1(SourcePolicy['Public']['key'] . "{$userID}-{$email}-{$timestamp}" . SourcePolicy['Public']['key']);
 }
-function SendActivationEmail(int $userID, string $email) {
-	$activationCode = GetActivationCode($userID, $email, time());
+function SendActivationEmail(int $userID, string $username, string $email) {
+	$t = time();
+	$activationCode = GetActivationCode($userID, $email, $t);
+	SendMail($email, '账号激活邮件', "你好, {$username}. 你收到此邮件是因为你需要激活在 FontServer 注册的账号.\n\n若为本人操作, 请点击下方链接:\nhttp://font.acgvideo.cn/confirm.php?uid={$userID}&email={$email}&time={$t}&code={$activationCode}\n\n若非本人操作, 则无需采取任何行动.\n");
 }
 ?>
