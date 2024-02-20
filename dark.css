@@ -8,6 +8,10 @@ a {
 	margin-top: 8px;
 	margin-bottom: 8px;
 }
+.login label, .register label {
+	display: inline-block;
+	width: 45px;
+}
 @media (prefers-color-scheme: dark) {
 	html {
 		background-color: #000;

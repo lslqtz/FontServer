@@ -10,6 +10,21 @@ define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
 define('MaxMemoryMB', 1024);
 define('CompressLevel', 3);
 define('SourcePolicy', array(
+	'Public' => array(
+		'key' => 'FontServer',
+		'AllowLogin' => false,
+		'AllowRegister' => false,
+		'AllowDownloadFont' => true,
+		'AllowDownloadFontArchive' => false,
+		'AllowDownloadSubsetSubtitle' => true,
+		'AllowDownloadSubsetSubtitleWithSeparateFont' => false,
+		'ProcessFontForEverySubtitle' => true, // false: High memory consumption, true: High performance consumption.
+		'MaxCacheFontCount' => 0,
+		'MaxFilesizeMB' => 2,
+		'MaxDownloadFontCount' => 12,
+		'MinSearchLength' => 2,
+		'MaxSearchFontCount' => 100
+	),
 	'FontServer' => array(
 		'key' => 'FontServer',
 		'AllowLogin' => true,
@@ -53,21 +68,6 @@ function CheckSign(string $source, int $uid, int $torrentID, int $timestamp, str
 		return null;
 	}
 	return $sign;
-}
-function CheckLogin(string $source, int $uid, int $timestamp, string $sign): bool {
-	if ($sign !== sha1(SourcePolicy[$source]['key'] . "Login/{$source}_{$uid}-{$timestamp}" . SourcePolicy[$source]['key']) || ($timestamp + LoginExpireTime) < time()) {
-		return false;
-	}
-	return true;
-}
-function IsLogin(): ?array {
-	// Return sourcePolicy.
-	if (isset($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')]) && CheckLogin($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')])) {
-		if (SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]['AllowLogin']) {
-			return [$_COOKIE[(CookieName . '_' . 'Source')], intval($_COOKIE[(CookieName . '_' . 'UID')]), SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]];
-		}
-	}
-	return null;
 }
 function HTMLStart(string $prefix = '') {
 	$title = Title;

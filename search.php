@@ -1,6 +1,7 @@
 <?php
 require_once('config.php');
 require_once('mysql.php');
+require_once('user.php');
 function SearchFonts(int $minSearchLength, int $maxSearchFontCount, string $fontname): array {
 	global $db;
 	if (empty($fontname) || mb_strlen(str_replace(array(' ', '%', '_'), '', $fontname)) < $minSearchLength || !ConnectDB()) {
