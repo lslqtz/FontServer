@@ -33,7 +33,7 @@ function Install() {
 		UNIQUE KEY `index_unique` (`source`,`user_id`,`torrent_id`,`download_id`) USING BTREE
 	) ENGINE=InnoDB AUTO_INCREMENT=2195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
 	$db->exec("CREATE TABLE `users` (
-		`id` bigint NOT NULL,
+		`id` bigint NOT NULL AUTO_INCREMENT,
 		`username` varchar(123) NOT NULL,
 		`email` varchar(123) NOT NULL,
 		`password` varchar(123) NOT NULL,

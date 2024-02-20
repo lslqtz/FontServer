@@ -49,13 +49,10 @@ echo <<<html
 		<div class="login">
 			<form role="login" method="POST">
 				<label for="username">账号:</label>
-				<input type="text" name="username" />
-				<br>
-				<label for="email">Email:</label>
-				<input type="text" name="email" />
+				<input type="text" name="username" autocomplete="username" />
 				<br>
 				<label for="password">密码:</label>
-				<input type="text" name="password" />
+				<input type="password" name="password" autocomplete="current-password" />
 				<br>
 				<button type="submit" style="margin-top: 8px;">登录</button>
 			</form>

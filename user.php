@@ -51,6 +51,7 @@ function RegisterUser(string $username, string $email, string $password): bool {
 		}
 		return false;
 	}
+	$password = sha1($password);
 	$stmt = $db->prepare("INSERT INTO `users` (`username`, `email`, `password`) VALUES (?, ?, ?)");
 	try {
 		if (!$stmt->execute([$username, $email, $password])) {
@@ -62,12 +63,23 @@ function RegisterUser(string $username, string $email, string $password): bool {
 	$userID = $db->lastInsertId();
 	$stmt->closeCursor();
 
+	if ($userID === false) {
+		return false;
+	}
+
 	SendActivationEmail($userID, $username, $email);
 
 	return true;
 }
 function ConfirmEmail(int $userID, string $email, int $timestamp, string $code): int {
-	if (($timestamp + SourcePolicy['Public']['EmailExpireTime']) < time() || ($code === GetActivationCode($userID, $email, $timestamp)) <= 0) {
+	global $db;
+	if (!ConnectDB()) {
+		if (function_exists('LogStr')) {
+			LogStr('无法连接到数据库', -1);
+		}
+		return 0;
+	}
+	if (($timestamp + EmailExpireTime) < time() || $code !== GetActivationCode($userID, $email, $timestamp)) {
 		return 0;
 	}
 	$result = $db->exec("UPDATE `users` SET `status` = 1 WHERE `status` = 0 AND `id` = {$userID} LIMIT 1");
@@ -79,6 +91,6 @@ function GetActivationCode(int $userID, string $email, int $timestamp): string {
 function SendActivationEmail(int $userID, string $username, string $email) {
 	$t = time();
 	$activationCode = GetActivationCode($userID, $email, $t);
-	SendMail($email, '账号激活邮件', "你好, {$username}. 你收到此邮件是因为你需要激活在 FontServer 注册的账号.\n\n若为本人操作, 请点击下方链接:\nhttp://font.acgvideo.cn/confirm.php?uid={$userID}&email={$email}&time={$t}&code={$activationCode}\n\n若非本人操作, 则无需采取任何行动.\n");
+	SendMail($email, '账号激活邮件', "你好, {$username}. 你收到此邮件是因为你需要激活在 FontServer 注册的账号.\n\n若为本人操作, 请点击下方链接:\nhttp://font.acgvideo.cn/confirm.php?uid={$userID}&email=" . rawurlencode($email) . "&time={$t}&code={$activationCode}\n\n若非本人操作, 则无需采取任何行动.\n");
 }
 ?>
