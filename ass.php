@@ -58,7 +58,7 @@ function ReplaceFontArr(array &$mapFontnameArr, string &$subsetASSContent, array
 			$subsetASSContent = str_ireplace($mapFontname, $fontname, $subsetASSContent);
 		}
 		if (!$subsetFontOnly) {
-			$subsetASSContent .= "\n[Font]\n";
+			$subsetASSContent .= "\n[Fonts]\n";
 			foreach ($subsetFontASSContent as $mapFontfile => &$fontASSContent) {
 				if (in_array(GetFontname($mapFontfile), $mapFontnameArr)) {
 					$subsetASSContent .= "fontname: {$mapFontfile}\n{$fontASSContent}\n";
@@ -74,7 +74,7 @@ function GetSubsetFontFile(?FontLib\TrueType\File $fontInfo, string $mapFontname
 	$uniqueCharStr = implode($uniqueChar);
 	$fontData = $fontInfo->getData('name', 'records');
 	foreach ($fontData as $key => &$data) {
-		if (stripos($key, '3,1,1033,') === false) {
+		if (stripos($key, '3,1,1033') === false) {
 			unset($fontData[$key]);
 		} else {
 			$expKey = explode(',', $key);
@@ -149,6 +149,12 @@ function ProcessFont(string $source, array &$font, string &$mapFontfile, array &
 		}
 		$mapFontnameArr[$fontfullname2] = $mapFontname;
 	}
+	foreach (explode("\n", $font['fontname']) as &$fontname2) {
+		if (isset($mapFontnameArr[$fontname2])) {
+			continue;
+		}
+		$mapFontnameArr[$fontname2] = $mapFontname;
+	}
 	foreach (explode("\n", $font['fontpsname']) as &$fontpsname2) {
 		if (isset($mapFontnameArr[$fontpsname2])) {
 			continue;
@@ -163,9 +169,6 @@ function ProcessFont(string $source, array &$font, string &$mapFontfile, array &
 	} else {
 		$fontInfo = $fontInfoArr[$font['fontfile']];
 	}
-	if ($fontInfoArr !== null && count($fontInfoArr) > SourcePolicy[$source]['MaxCacheFontCount']) {
-		CloseFontInfo(array_shift($fontInfoArr));
-	}
 	if ($subsetFontASSContent !== null) {
 		if (!$subsetFontOnly) {
 			GetSubsetFontASSContent($fontInfo, $mapFontname, $mapFontfile, $subsetFontASSContent, $uniqueChar);
@@ -175,6 +178,8 @@ function ProcessFont(string $source, array &$font, string &$mapFontfile, array &
 	}
 	if ($fontInfoArr === null) {
 		CloseFontInfo($fontInfo);
+	} else if ($fontInfoArr !== null && count($fontInfoArr) > SourcePolicy[$source]['MaxCacheFontCount']) {
+		CloseFontInfo(array_shift($fontInfoArr));
 	}
 	return 0;
 }

@@ -14,12 +14,18 @@ function LogStr(string $message, int $status = 0) {
 }
 if (!is_dir('font2')) {
 	LogStr('找不到 font2 目录', -1);
-	return;
+	die();
 }
 $fontfiles = GetAllFontsFilename('font2');
 foreach ($fontfiles as $fontfile) {
 	unset($font, $fontsInfo, $fontsInfoArr);
 	gc_collect_cycles();
+	/*
+	if (is_file("t/" . sha1($fontfile))) {
+		continue;
+	}
+	touch("t/" . sha1($fontfile));
+	*/
 	$oldFontPath = $fontfile->getPathname();
 	if (!is_file($oldFontPath)) {
 		LogStr('跳过错误文件', -1);
@@ -30,8 +36,29 @@ foreach ($fontfiles as $fontfile) {
 		LogStr('跳过空文件', -1);
 		continue;
 	}
-	$fontFileInfo = pathinfo($fontfile->getFilename());
+	$fontFileInfo = pathinfo($oldFontPath);
 	$fontExt = strtolower($fontFileInfo['extension']);
+	if (!in_array($fontExt, ['ttf', 'ttc', 'otf'])) {
+	#if ($fontExt !== 'otf') {
+		LogStr('跳过不支持文件', -1);
+		continue;
+	}
+	if ($fontExt === 'otf') {
+		if (!is_file('/usr/local/bin/ftcli')) {
+			LogStr('找不到 ftcli', -1);
+			die();
+		}
+		system("/usr/local/bin/ftcli converter otf2ttf -out " .  escapeshellarg("{$fontFileInfo['dirname']}/") . " " . escapeshellarg($oldFontPath), $retcode);
+		if ($retcode > 0) {
+			LogStr("转换 otf 失败: {$oldFontPath}", -1);
+			continue;
+		}
+		LogStr("转换 otf 成功: {$oldFontPath}");
+		//unlink($oldFontPath);
+		$fontExt = 'ttf';
+		$oldFontPath = ($fontFileInfo['filename'] . ".ttf");
+	}
+	continue;
 	$fontFilename = preg_replace('/\d{10,}/', '', $fontFileInfo['filename']);
 	$fontsInfoArr = [];
 	try {

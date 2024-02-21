@@ -2,7 +2,7 @@
 require_once('config.php');
 require_once('mysql.php');
 require_once('vendor/autoload.php');
-define('BetterExt', ['ttf', 'ttc']);
+define('BetterExt', ['ttc']);
 
 function GetAllFontsFilename(string $fontdir) {
 	$dir = new RecursiveDirectoryIterator(
