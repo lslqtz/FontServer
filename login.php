@@ -2,7 +2,7 @@
 require_once('config.php');
 require_once('user.php');
 if (isset($_GET['logout']) && $_GET['logout'] == 1) {
-	if (isset($_COOKIE[(CookieName . '_' . 'Source')]) && $_COOKIE[(CookieName . '_' . 'Source')] === 'Public') {
+	if (isset($_COOKIE[(CookieName . '_' . 'Source')])) {
 		setcookie(CookieName . '_Source', '', -1);
 		setcookie(CookieName . '_UID', '', -1);
 		setcookie(CookieName . '_Time', '', -1);
@@ -46,7 +46,7 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	header('HTTP/1.1 302 Found');
 	header('Location: /');
 	die();
-} else {
+} else if (!SourcePolicy['Public']['AllowLogin']) {
 	dieHTML(":(\n", 'Login');
 }
 HTMLStart('Login');

@@ -13,7 +13,7 @@ $filename = 'Content.ass';
 $filehash = 'Unknown';
 $t = time();
 $sign = GenerateSign($sourcePolicy[0], $sourcePolicy[1], 0, $t, $filename, $filehash);
-HTMLStart('', GetUserBar($sourcePolicy[0], $sourcePolicy[1], ($sourcePolicy[0] === 'Public')));
+HTMLStart('', GetUserBar($sourcePolicy[0], $sourcePolicy[1], true));
 echo "<script src=\"base64.js\"></script>\n";
 	echo "<script>function Convert() { let content = document.getElementById('file').value; if (content === null || content === '') { alert('坏内容!'); return false; } document.forms[0].children[0].value = Base64.encode(content); return true; }</script>\n";
 echo "<label for=\"file\">ASS 字幕内容:</label>\n<br>\n";

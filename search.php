@@ -28,7 +28,7 @@ if ($sourcePolicy === null) {
 	die();
 }
 $minSearchLength = $sourcePolicy[2]['MinSearchLength'];
-HTMLStart('Search', GetUserBar($sourcePolicy[0], $sourcePolicy[1], ($sourcePolicy[0] === 'Public')));
+HTMLStart('Search', GetUserBar($sourcePolicy[0], $sourcePolicy[1], true));
 echo <<<html
 		<div class="searchBox">
 			<form role="serach" method="POST">
