@@ -15,10 +15,10 @@ function IsLogin(): ?array {
 function GetUserBar(string $source, int $userID, bool $allowLogout = false): string {
 	if ($source === 'Public') {
 		if (($username = GetUsernameByID($userID)) !== null) {
-			return "你好, {$username} (UID: {$userID})" . ($allowLogout ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
+			return "你好, {$username} (UID: {$userID})" . (($allowLogout && IsLogin() !== null) ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
 		}
 	}
-	return "你好, {$source} 用户 (UID: {$userID})" . ($allowLogout ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
+	return "你好, {$source} 用户 (UID: {$userID})" . (($allowLogout && IsLogin() !== null) ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
 }
 function GenerateLoginSign(string $source, int $uid, int $timestamp): string {
 	return sha1(SourcePolicy[$source]['key'] . "Login/{$source}_{$uid}-{$timestamp}" . SourcePolicy[$source]['key']);
