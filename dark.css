@@ -30,8 +30,11 @@ a {
 	input[type="checkbox"] {
 		filter: invert(80%) hue-rotate(180deg) brightness(1.5);
 	}
-	p, h1, h2, th, td, label, input, button, input[type="file"]::file-selector-button {
+	p, h1, h2, th, td, label, input, button, textarea, input[type="file"]::file-selector-button {
 		color: #fff;
+	}
+	textarea {
+		background-color: #333;
 	}
 	button, input[type="text"], input[type="password"], input[type="file"]::file-selector-button {
 		background-color: #666;

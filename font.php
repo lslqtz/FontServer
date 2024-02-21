@@ -123,7 +123,7 @@ function GetFontFileByID(int $fontID): ?string {
 	}
 	$stmt = $db->prepare("SELECT `fontfile` FROM `fonts_meta` WHERE `id` = ? LIMIT 1");
 	try {
-		if (!$stmt->execute($fontID)) {
+		if (!$stmt->execute([$fontID])) {
 			return null;
 		}
 	} catch (Throwable $e) {

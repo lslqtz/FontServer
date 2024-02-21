@@ -96,7 +96,9 @@ function RegisterUser(string $username, string $email, string $password): bool {
 		return false;
 	}
 
-	SendActivationEmail($userID, $username, $email);
+	if (SourcePolicy['Public']['EmailExpireTime'] > 0) {
+		SendActivationEmail($userID, $username, $email);
+	}
 
 	return true;
 }
@@ -108,7 +110,7 @@ function ConfirmEmail(int $userID, string $email, int $timestamp, string $code):
 		}
 		return 0;
 	}
-	if (($timestamp + EmailExpireTime) < time() || $code !== GetActivationCode($userID, $email, $timestamp)) {
+	if (($timestamp + SourcePolicy['Public']['EmailExpireTime']) < time() || $code !== GetActivationCode($userID, $email, $timestamp)) {
 		return 0;
 	}
 	$result = $db->exec("UPDATE `users` SET `status` = 1 WHERE `status` = 0 AND `id` = {$userID} LIMIT 1");

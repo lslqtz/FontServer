@@ -18,6 +18,8 @@ if (!is_dir('font2')) {
 }
 $fontfiles = GetAllFontsFilename('font2');
 foreach ($fontfiles as $fontfile) {
+	unset($font, $fontsInfo, $fontsInfoArr);
+	gc_collect_cycles();
 	$oldFontPath = $fontfile->getPathname();
 	if (!is_file($oldFontPath)) {
 		LogStr('跳过错误文件', -1);
@@ -79,6 +81,9 @@ foreach ($fontfiles as $fontfile) {
 					} else if (empty($fontname)) {
 						$fontname = $fontfullname;
 					}
+					if (substr_count($fontname, '?') > 3 && substr_count($fontfullname, '?') > 3) {
+						continue;
+					}
 					$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $fontsInfo->getFontSubfamily(3, $i, $languageID)];
 				}
 			}
@@ -123,7 +128,7 @@ foreach ($fontfiles as $fontfile) {
 	LogStr("移动字体成功: {$oldFontPath} -> {$fontPath}");
 	$rowID = AddFontMeta(1, $fontFilename, $fileSize, true);
 	if ($rowID <= 0) {
-		rename($fontPath, $oldFontPath);
+		copy($fontPath, $oldFontPath);
 		LogStr("添加字体元数据失败: {$fontPath}", -1);
 		continue;
 	}

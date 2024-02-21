@@ -16,7 +16,6 @@ define('SMTPPassword', 'FontServer');
 define('CookieName', 'FontServer-Auth');
 define('LoginExpireTime', 3600);
 define('DownloadExpireTime', 300);
-define('EmailExpireTime', 3600);
 define('FontPath', array('font'));
 define('SysCacheDir', sys_get_temp_dir());
 define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
@@ -25,6 +24,7 @@ define('SourcePolicy', array(
 		'key' => 'FontServer',
 		'AllowLogin' => false,
 		'AllowRegister' => false,
+		'EmailExpireTime' => 0,
 		'AllowDownloadFont' => true,
 		'AllowDownloadFontArchive' => false,
 		'AllowDownloadSubsetSubtitle' => true,
@@ -111,7 +111,7 @@ function dieHTML(string $string, string $prefix = '') {
 	HTMLEnd();
 	die();
 }
-function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadFontArr = null) {
+function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadFontArr = null, bool $uploadSubtitle = false) {
 	echo "<p>" . ($foundFont ? '找到字体数: ' : '缺失字体数: ') . count($fontsResult) . "</p>\n";
 	echo "<div class=\"searchResult\">\n<table border=\"2\">\n";
 	echo "<thead>\n<tr>\n";
@@ -129,8 +129,8 @@ function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadF
 		echo "<tr style=\"height: 42px; white-space: pre-line;\">\n";
 		echo "<td>{$fontResult['id']}</td>\n";
 		echo "<td>{$fontResult['uploader']}</td>\n";
-		if ($downloadFontArr !== null && ($sign = GenerateSign($downloadFontArr[0], $downloadFontArr[1], $downloadFontArr[2], $downloadFontArr[3], $fontResult['fontfile'], sha1($fontResult['id']))) !== null) {
-			echo "<td><a href=\"download.php?source={$downloadFontArr[0]}&uid={$downloadFontArr[1]}&torrent_id={$downloadFontArr[2]}&time={$downloadFontArr[3]}&sign={$sign}&filename={$fontResult['fontfile']}&font_id={$fontResult['id']}\">{$fontResult['fontfile']}</a></td>\n";
+		if ($downloadFontArr !== null && ($sign = GenerateSign($downloadFontArr[0], $downloadFontArr[1], $downloadFontArr[2], $downloadFontArr[3], $fontResult['fontfile'], ($uploadSubtitle ? 'Unknown' : sha1($fontResult['id'])))) !== null) {
+			echo "<td><a href=\"download.php?source={$downloadFontArr[0]}&uid={$downloadFontArr[1]}&torrent_id={$downloadFontArr[2]}&time={$downloadFontArr[3]}&sign={$sign}&filename=" . rawurlencode($fontResult['fontfile']) . ($uploadSubtitle ? '&upload_subtitle=1' : '') . "&font_id={$fontResult['id']}\">{$fontResult['fontfile']}</a></td>\n";
 		} else {
 			echo "<td>{$fontResult['fontfile']}</td>\n";
 		}
