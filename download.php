@@ -49,7 +49,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 	if (empty($_POST['file'])) {
 		dieHTML("坏参数!\n", 'Download');
 	}
-	if (!in_array($fileExt, ['ass', 'ssa', 'zip'])) {
+	if ((isset($_GET['uploadSubtitle']) && $_GET['uploadSubtitle'] == 1 && $fileExt !== 'ass') || !in_array($fileExt, ['ass', 'ssa', 'zip'])) {
 		dieHTML("坏扩展名!\n", 'Download');
 	}
 
@@ -67,7 +67,7 @@ if (isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_G
 		dieHTML("下载自动子集化字幕 (非嵌入字体) 功能当前被停用!\n", 'Download');
 	}
 
-	$sign = CheckSign($source, $uid, $torrentID, $timestamp, $rawSign, "{$filename}.{$fileExt}", sha1($_POST['file']));
+	$sign = CheckSign($source, $uid, $torrentID, $timestamp, $rawSign, "{$filename}.{$fileExt}", ((isset($_GET['uploadSubtitle']) && $_GET['uploadSubtitle'] == 1) ? 'Unknown' : sha1($_POST['file'])));
 	if ($sign === null) {
 		dieHTML("坏签名!\n", 'Download');
 	}

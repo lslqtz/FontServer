@@ -34,7 +34,7 @@ echo <<<html
 			<form role="serach" method="POST">
 				<label for="fontname">通过字体名搜索字体:</label>
 				<br>
-				<input type="text" name="fontname" minlength="{$minSearchLength}" />
+				<input type="text" id="fontname" name="fontname" minlength="{$minSearchLength}" />
 				<button type="submit">搜索</button>
 			</form>
 		</div>

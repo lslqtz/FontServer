@@ -15,13 +15,13 @@ echo <<<html
 		<div class="register">
 			<form role="register" method="POST">
 				<label for="username">账号:</label>
-				<input type="text" name="username" autocomplete="username" />
+				<input type="text" id="username" name="username" autocomplete="username" />
 				<br>
 				<label for="email">Email:</label>
-				<input type="text" name="email" autocomplete="email" />
+				<input type="text" id="email" name="email" autocomplete="email" />
 				<br>
 				<label for="password">密码:</label>
-				<input type="password" name="password" autocomplete="new-password" />
+				<input type="password" id="password" name="password" autocomplete="new-password" />
 				<br>
 				<button type="submit" style="margin-top: 8px;">注册</button>
 			</form>
