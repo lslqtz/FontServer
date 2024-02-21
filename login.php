@@ -12,16 +12,13 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	header('Location: /');
 	die();
 } else if (IsLogin() !== null) {
-	dieHTML("已登录!\n", 'Login');
+	header('HTTP/1.1 302 Found');
+	header('Location: /');
+	die();
 } else if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
 	//if (!isset(SourcePolicy[$_GET['source']])) {
 	if (!is_numeric($_GET['uid']) || !is_numeric($_GET['time'])) {
 		dieHTML("坏参数!\n", 'Login');
-	}
-	if (IsLogin()) {
-		header('HTTP/1.1 302 Found');
-		header('Location: /search.php');
-		die();
 	}
 	if (!CheckLoginBySign($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
 		dieHTML("坏签名!\n", 'Login');
@@ -32,7 +29,7 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	setcookie(CookieName . '_Time', intval($_GET['time']), $expireTime);
 	setcookie(CookieName . '_Sign', $_GET['sign'], $expireTime);
 	header('HTTP/1.1 302 Found');
-	header('Location: /search.php');
+	header('Location: /');
 	die();
 } else if (SourcePolicy['Public']['AllowLogin'] && !empty($_POST['username']) && isset($_POST['password'])) {
 	if (($userID = CheckLoginByUsername($_POST['username'], $_POST['password'])) <= 0) {
@@ -48,6 +45,7 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	setcookie(CookieName . '_Sign', GenerateLoginSign($source, $userID, $t), $expireTime);
 	header('HTTP/1.1 302 Found');
 	header('Location: /');
+	die();
 } else {
 	dieHTML(":(\n", 'Login');
 }
