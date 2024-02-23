@@ -98,6 +98,7 @@ function DeleteFontByID(int $fontID) {
 		if (function_exists('LogStr')) {
 			LogStr('无法连接到数据库', -1);
 		}
+		return;
 	}
 	$db->exec("DELETE FROM `fonts` WHERE `id` = {$fontID}");
 	$db->exec("DELETE FROM `fonts_meta` WHERE `id` = {$fontID} LIMIT 1");
@@ -108,6 +109,7 @@ function DeleteFontByFilename(string $filename) {
 		if (function_exists('LogStr')) {
 			LogStr('无法连接到数据库', -1);
 		}
+		return;
 	}
 	$fontID = GetFontIDByFilename($filename);
 	if ($fontID > 0) {
@@ -120,6 +122,7 @@ function GetFontFileByID(int $fontID): ?string {
 		if (function_exists('LogStr')) {
 			LogStr('无法连接到数据库', -1);
 		}
+		return null;
 	}
 	$stmt = $db->prepare("SELECT `fontfile` FROM `fonts_meta` WHERE `id` = ? LIMIT 1");
 	try {
@@ -144,6 +147,7 @@ function GetFontByNameArr(int $maxDownloadFontCount, array $fontname): array {
 		if (function_exists('LogStr')) {
 			LogStr('无法连接到数据库', -1);
 		}
+		return [];
 	}
 	if (count($fontname) < 1 || !ConnectDB()) {
 		return [];
@@ -191,6 +195,7 @@ function GetFontIDByFilename(string $filename): int {
 		if (function_exists('LogStr')) {
 			LogStr('无法连接到数据库', -1);
 		}
+		return 0;
 	}
 	if (!empty($filename)) {
 		$stmt = $db->prepare("SELECT `id` FROM `fonts_meta` WHERE `fontfile` = ? LIMIT 1");
@@ -214,11 +219,6 @@ function GetFontIDByFilename(string $filename): int {
 }
 function DetectDuplicateFont(string $fontext, ?string $fontname, ?string $fontfullname, ?string $fontsubfamily, bool $deleteWorseExt = false): array {
 	global $db;
-	if (!ConnectDB()) {
-		if (function_exists('LogStr')) {
-			LogStr('无法连接到数据库', -1);
-		}
-	}
 	if (empty($fontfullname)) {
 		if (empty($fontname)) {
 			return [-1];

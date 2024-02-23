@@ -20,12 +20,6 @@ $fontfiles = GetAllFontsFilename('font2');
 foreach ($fontfiles as $fontfile) {
 	unset($font, $fontsInfo, $fontsInfoArr);
 	gc_collect_cycles();
-	/*
-	if (is_file("t/" . sha1($fontfile))) {
-		continue;
-	}
-	touch("t/" . sha1($fontfile));
-	*/
 	$oldFontPath = $fontfile->getPathname();
 	if (!is_file($oldFontPath)) {
 		LogStr('跳过错误文件', -1);
@@ -39,7 +33,7 @@ foreach ($fontfiles as $fontfile) {
 	$fontFileInfo = pathinfo($oldFontPath);
 	$fontExt = strtolower($fontFileInfo['extension']);
 	if (!in_array($fontExt, ['ttf', 'ttc', 'otf'])) {
-	#if ($fontExt !== 'otf') {
+	//if ($fontExt !== 'otf') {
 		LogStr('跳过不支持文件', -1);
 		continue;
 	}
@@ -58,7 +52,6 @@ foreach ($fontfiles as $fontfile) {
 		$fontExt = 'ttf';
 		$oldFontPath = ($fontFileInfo['filename'] . ".ttf");
 	}
-	continue;
 	$fontFilename = preg_replace('/\d{10,}/', '', $fontFileInfo['filename']);
 	$fontsInfoArr = [];
 	try {
@@ -128,12 +121,12 @@ foreach ($fontfiles as $fontfile) {
 	foreach ($fontsInfoArr as $key => &$fontsInfo) {
 		$fontArr = DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3], true);
 		if ($fontArr[0] > 0) {
-			if (preg_replace('/\d{10,}/', '', strtolower($fontArr[1])) === strtolower("{$fontFilename}.{$fontExt}")) {
-				$hasDupe = true;
-				LogStr("跳过重复字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
-				unset($fontsInfoArr[$key]);
-				continue;
-			}
+			//if (preg_replace('/\d{10,}/', '', strtolower($fontArr[1])) === strtolower("{$fontFilename}.{$fontExt}")) {
+			$hasDupe = true;
+			LogStr("跳过重复字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
+			unset($fontsInfoArr[$key]);
+			continue;
+			//}
 		} else if ($fontArr[0] < 0) {
 			LogStr("跳过错误字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
 			unset($fontsInfoArr[$key]);
