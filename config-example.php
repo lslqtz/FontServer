@@ -22,9 +22,8 @@ define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
 define('SourcePolicy', array(
 	'Public' => array(
 		'key' => 'FontServer',
-		'AllowLogin' => false,
-		'AllowRegister' => false,
-		'EmailExpireTime' => 0,
+		'AllowLogin' => true,
+		'AllowRegister' => true,
 		'AllowDownloadFont' => true,
 		'AllowDownloadFontArchive' => false,
 		'AllowDownloadSubsetSubtitle' => true,
@@ -34,12 +33,14 @@ define('SourcePolicy', array(
 		'MaxFilesizeMB' => 2,
 		'MaxDownloadFontCount' => 12,
 		'MinSearchLength' => 2,
-		'MaxSearchFontCount' => 100
+		'MaxSearchFontCount' => 100,
+		'EmailExpireTime' => 0,
+		'AnonUID' => 10000000
 	),
 	'FontServer' => array(
 		'key' => 'FontServer',
 		'AllowLogin' => true,
-		'AllowDownloadFont' => false,
+		'AllowDownloadFont' => true,
 		'AllowDownloadFontArchive' => false,
 		'AllowDownloadSubsetSubtitle' => true,
 		'AllowDownloadSubsetSubtitleWithSeparateFont' => true,
