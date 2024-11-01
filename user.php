@@ -10,6 +10,9 @@ function IsLogin(): ?array {
 			return [$_COOKIE[(CookieName . '_' . 'Source')], intval($_COOKIE[(CookieName . '_' . 'UID')]), SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]];
 		}
 	}
+	if (SourcePolicy['Public']['AnonUID'] > 0) {
+		return ['Public', SourcePolicy['Public']['AnonUID'], SourcePolicy['Public']];
+	}
 	return null;
 }
 function GetUserBar(string $source, int $userID, bool $allowLogout = false): string {
@@ -110,7 +113,10 @@ function ConfirmEmail(int $userID, string $email, int $timestamp, string $code):
 		}
 		return 0;
 	}
-	if (($timestamp + SourcePolicy['Public']['EmailExpireTime']) < time() || $code !== GetActivationCode($userID, $email, $timestamp)) {
+	if (SourcePolicy['Public']['EmailExpireTime'] > 0 && ($timestamp + SourcePolicy['Public']['EmailExpireTime']) < time()) {
+		return 0;
+	}
+	if (code !== GetActivationCode($userID, $email, $timestamp)) {
 		return 0;
 	}
 	$result = $db->exec("UPDATE `users` SET `status` = 1 WHERE `status` = 0 AND `id` = {$userID} LIMIT 1");
