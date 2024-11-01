@@ -23,6 +23,7 @@ define('SourcePolicy', array(
 	'Public' => array(
 		'key' => 'FontServer',
 		'AllowLogin' => true,
+		'AllowLogout' => false,
 		'AllowRegister' => true,
 		'AllowDownloadFont' => true,
 		'AllowDownloadFontArchive' => false,
@@ -34,12 +35,13 @@ define('SourcePolicy', array(
 		'MaxDownloadFontCount' => 12,
 		'MinSearchLength' => 2,
 		'MaxSearchFontCount' => 100,
-		'EmailExpireTime' => 0,
+		'EmailExpireTime' => 0, // 0: Manual approval.
 		'AnonUID' => 10000000
 	),
 	'FontServer' => array(
 		'key' => 'FontServer',
 		'AllowLogin' => true,
+		'AllowLogout' => true,
 		'AllowDownloadFont' => true,
 		'AllowDownloadFontArchive' => false,
 		'AllowDownloadSubsetSubtitle' => true,

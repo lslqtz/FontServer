@@ -2,13 +2,18 @@
 require_once('config.php');
 require_once('user.php');
 if (!SourcePolicy['Public']['AllowRegister']) {
-	dieHTML(":(\n", 'Register');
+	dieHTML(":(", 'Register');
+}
+if (($loginPolicy = IsLogin()) !== null && $loginPolicy[0] !== 'Public') {
+	header('HTTP/1.1 302 Found');
+	header('Location: /');
+	die();
 }
 if (!empty($_POST['username']) && !empty($_POST['email']) && !empty($_POST['password'])) {
 	if (!RegisterUser($_POST['username'], $_POST['email'], $_POST['password'])) {
-		dieHTML("注册失败!\n", 'Register');
+		dieHTML("注册失败!", 'Register');
 	}
-	dieHTML("注册成功! 最后一步: 请查收邮箱中的确认邮件.\n", 'Register');
+	dieHTML("注册成功! 最后一步: 请查收邮箱中的确认邮件.", 'Register');
 }
 HTMLStart('Register');
 echo <<<html

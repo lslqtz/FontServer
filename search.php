@@ -21,14 +21,14 @@ function SearchFonts(int $minSearchLength, int $maxSearchFontCount, string $font
 
 	return $result;
 }
-$sourcePolicy = IsLogin();
-if ($sourcePolicy === null) {
+$loginPolicy = IsLogin();
+if ($loginPolicy === null) {
 	header('HTTP/1.1 302 Found');
 	header('Location: login.php');
 	die();
 }
-$minSearchLength = $sourcePolicy[2]['MinSearchLength'];
-HTMLStart('Search', GetUserBar($sourcePolicy[0], $sourcePolicy[1], true));
+$minSearchLength = $loginPolicy[2]['MinSearchLength'];
+HTMLStart('Search', GetUserBar($loginPolicy[0], $loginPolicy[1], $loginPolicy[2]['AllowLogout']));
 echo <<<html
 		<div class="searchBox">
 			<form role="serach" method="POST">
@@ -40,7 +40,7 @@ echo <<<html
 		</div>
 html;
 if (isset($_POST['fontname'])) {
-	ShowTable(SearchFonts($minSearchLength, $sourcePolicy[2]['MaxSearchFontCount'], $_POST['fontname']), true, ($sourcePolicy[2]['AllowDownloadFont'] ? [$sourcePolicy[0], $sourcePolicy[1], 0, time()] : null));
+	ShowTable(SearchFonts($minSearchLength, $loginPolicy[2]['MaxSearchFontCount'], $_POST['fontname']), true, ($loginPolicy[2]['AllowDownloadFont'] ? [$loginPolicy[0], $loginPolicy[1], 0, time()] : null));
 }
 HTMLEnd();
 ?>

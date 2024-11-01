@@ -4,13 +4,14 @@ require_once('mysql.php');
 require_once('mail.php');
 
 function IsLogin(): ?array {
-	// Return sourcePolicy.
+	// Return loginPolicy.
 	if (isset($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')]) && CheckLoginBySign($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')])) {
 		if (SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]['AllowLogin']) {
 			return [$_COOKIE[(CookieName . '_' . 'Source')], intval($_COOKIE[(CookieName . '_' . 'UID')]), SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]];
 		}
 	}
 	if (SourcePolicy['Public']['AnonUID'] > 0) {
+		// Public users use the public policy, but the public policy is the default policy, so it is not only used by public users.
 		return ['Public', SourcePolicy['Public']['AnonUID'], SourcePolicy['Public']];
 	}
 	return null;
@@ -18,10 +19,10 @@ function IsLogin(): ?array {
 function GetUserBar(string $source, int $userID, bool $allowLogout = false): string {
 	if ($source === 'Public') {
 		if (($username = GetUsernameByID($userID)) !== null) {
-			return "你好, {$username} (UID: {$userID})" . (($allowLogout && IsLogin() !== null) ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
+			return "你好, {$username} (UID: {$userID})" . ($allowLogout ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
 		}
 	}
-	return "你好, {$source} 用户 (UID: {$userID})" . (($allowLogout && IsLogin() !== null) ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
+	return "你好, {$source} 用户 (UID: {$userID})" . ($allowLogout ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
 }
 function GenerateLoginSign(string $source, int $uid, int $timestamp): string {
 	return sha1(SourcePolicy[$source]['key'] . "Login/{$source}_{$uid}-{$timestamp}" . SourcePolicy[$source]['key']);
@@ -113,10 +114,10 @@ function ConfirmEmail(int $userID, string $email, int $timestamp, string $code):
 		}
 		return 0;
 	}
-	if (SourcePolicy['Public']['EmailExpireTime'] > 0 && ($timestamp + SourcePolicy['Public']['EmailExpireTime']) < time()) {
+	if (SourcePolicy['Public']['EmailExpireTime'] <= 0 || ($timestamp + SourcePolicy['Public']['EmailExpireTime']) < time()) {
 		return 0;
 	}
-	if (code !== GetActivationCode($userID, $email, $timestamp)) {
+	if ($code !== GetActivationCode($userID, $email, $timestamp)) {
 		return 0;
 	}
 	$result = $db->exec("UPDATE `users` SET `status` = 1 WHERE `status` = 0 AND `id` = {$userID} LIMIT 1");

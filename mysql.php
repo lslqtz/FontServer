@@ -12,8 +12,9 @@ function ConnectDB(): bool {
 			return true;
 		}
 	} catch (Throwable $e) {
-		dieHTML("DB Error: {$e}\n");
+		dieHTML("DB Error: {$e}.");
 	}
+	dieHTML("DB Error.");
 	return false;
 }
 function Install() {

@@ -11,17 +11,17 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	header('HTTP/1.1 302 Found');
 	header('Location: /');
 	die();
-} else if (IsLogin() !== null) {
+} else if (($loginPolicy = IsLogin()) !== null && $loginPolicy[0] !== 'Public') {
 	header('HTTP/1.1 302 Found');
 	header('Location: /');
 	die();
 } else if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
 	//if (!isset(SourcePolicy[$_GET['source']])) {
 	if (!is_numeric($_GET['uid']) || !is_numeric($_GET['time'])) {
-		dieHTML("坏参数!\n", 'Login');
+		dieHTML("坏参数!", 'Login');
 	}
 	if (!CheckLoginBySign($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
-		dieHTML("坏签名!\n", 'Login');
+		dieHTML("坏签名!", 'Login');
 	}
 	$expireTime = (time() + LoginExpireTime);
 	setcookie(CookieName . '_Source', $_GET['source'], $expireTime);
@@ -33,7 +33,7 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	die();
 } else if (SourcePolicy['Public']['AllowLogin'] && !empty($_POST['username']) && isset($_POST['password'])) {
 	if (($userID = CheckLoginByUsername($_POST['username'], $_POST['password'])) <= 0) {
-		dieHTML("坏账号!\n", 'Login');
+		dieHTML("坏账号!", 'Login');
 	}
 	$source = 'Public';
 	$userID = intval($userID);
@@ -47,7 +47,7 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	header('Location: /');
 	die();
 } else if (!SourcePolicy['Public']['AllowLogin']) {
-	dieHTML(":(\n", 'Login');
+	dieHTML(":(", 'Login');
 }
 HTMLStart('Login');
 echo <<<html
