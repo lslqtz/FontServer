@@ -5,9 +5,7 @@ if (!SourcePolicy['Public']['AllowRegister']) {
 	dieHTML(":(", 'Register');
 }
 if (($loginPolicy = IsLogin()) !== null && $loginPolicy[0] !== 'Public') {
-	header('HTTP/1.1 302 Found');
-	header('Location: /');
-	die();
+	RedirectIndex();
 }
 if (!empty($_POST['username']) && !empty($_POST['email']) && !empty($_POST['password'])) {
 	if (!RegisterUser($_POST['username'], $_POST['email'], $_POST['password'])) {

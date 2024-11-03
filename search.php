@@ -23,9 +23,7 @@ function SearchFonts(int $minSearchLength, int $maxSearchFontCount, string $font
 }
 $loginPolicy = IsLogin();
 if ($loginPolicy === null) {
-	header('HTTP/1.1 302 Found');
-	header('Location: login.php');
-	die();
+	RedirectLogin();
 }
 $minSearchLength = $loginPolicy[2]['MinSearchLength'];
 HTMLStart('Search', GetUserBar($loginPolicy[0], $loginPolicy[1], $loginPolicy[2]['AllowLogout']));

@@ -10,9 +10,9 @@ function IsLogin(): ?array {
 			return [$_COOKIE[(CookieName . '_' . 'Source')], intval($_COOKIE[(CookieName . '_' . 'UID')]), SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]];
 		}
 	}
-	if (SourcePolicy['Public']['AnonUID'] > 0) {
+	if (SourcePolicy['Public']['PublicUID'] > 0) {
 		// Public users use the public policy, but the public policy is the default policy, so it is not only used by public users.
-		return ['Public', SourcePolicy['Public']['AnonUID'], SourcePolicy['Public']];
+		return ['Public', SourcePolicy['Public']['PublicUID'], SourcePolicy['Public']];
 	}
 	return null;
 }

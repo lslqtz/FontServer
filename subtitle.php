@@ -1,13 +1,12 @@
 <?php
 require_once('config.php');
 require_once('user.php');
-if (($loginPolicy = IsLogin()) === null) {
-	if (!SourcePolicy['Public']['AllowLogin']) {
-		dieHTML(":(", 'Subtitle');
-	}
-	header('HTTP/1.1 302 Found');
-	header('Location: login.php');
-	die();
+$loginPolicy = IsLogin();
+if ($loginPolicy === null) {
+	RedirectLogin();
+}
+if (!$loginPolicy[2]['AllowDownloadFontArchive'] && !$loginPolicy[2]['AllowDownloadSubsetSubtitle'] && !$loginPolicy[2]['AllowDownloadSubsetSubtitleWithSeparateFont']) {
+	dieHTML(":(", 'Subtitle');
 }
 $filename = 'Content.ass';
 $filehash = 'Unknown';

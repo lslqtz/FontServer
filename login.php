@@ -8,13 +8,9 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 		setcookie(CookieName . '_Time', '', -1);
 		setcookie(CookieName . '_Sign', '', -1);
 	}
-	header('HTTP/1.1 302 Found');
-	header('Location: /');
-	die();
+	RedirectIndex();
 } else if (($loginPolicy = IsLogin()) !== null && $loginPolicy[0] !== 'Public') {
-	header('HTTP/1.1 302 Found');
-	header('Location: /');
-	die();
+	RedirectIndex();
 } else if (isset($_GET['source'], $_GET['uid'], $_GET['time'], $_GET['sign'])) {
 	//if (!isset(SourcePolicy[$_GET['source']])) {
 	if (!is_numeric($_GET['uid']) || !is_numeric($_GET['time'])) {
@@ -28,10 +24,10 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	setcookie(CookieName . '_UID', intval($_GET['uid']), $expireTime);
 	setcookie(CookieName . '_Time', intval($_GET['time']), $expireTime);
 	setcookie(CookieName . '_Sign', $_GET['sign'], $expireTime);
-	header('HTTP/1.1 302 Found');
-	header('Location: /');
-	die();
-} else if (SourcePolicy['Public']['AllowLogin'] && !empty($_POST['username']) && isset($_POST['password'])) {
+	RedirectIndex();
+} else if (!SourcePolicy['Public']['AllowLogin']) {
+	dieHTML(":(", 'Login');
+} else if (!empty($_POST['username']) && isset($_POST['password'])) {
 	if (($userID = CheckLoginByUsername($_POST['username'], $_POST['password'])) <= 0) {
 		dieHTML("坏账号!", 'Login');
 	}
@@ -43,11 +39,7 @@ if (isset($_GET['logout']) && $_GET['logout'] == 1) {
 	setcookie(CookieName . '_UID', $userID, $expireTime);
 	setcookie(CookieName . '_Time', $t, $expireTime);
 	setcookie(CookieName . '_Sign', GenerateLoginSign($source, $userID, $t), $expireTime);
-	header('HTTP/1.1 302 Found');
-	header('Location: /');
-	die();
-} else if (!SourcePolicy['Public']['AllowLogin']) {
-	dieHTML(":(", 'Login');
+	RedirectIndex();
 }
 HTMLStart('Login');
 echo <<<html

@@ -36,7 +36,7 @@ define('SourcePolicy', array(
 		'MinSearchLength' => 2,
 		'MaxSearchFontCount' => 100,
 		'EmailExpireTime' => 0, // 0: Manual approval.
-		'AnonUID' => 10000000
+		'PublicUID' => 10000000 // 0: Disable public.
 	),
 	'FontServer' => array(
 		'key' => 'FontServer',
@@ -112,6 +112,16 @@ function dieHTML(string $string, string $prefix = '') {
 	HTMLStart($prefix);
 	echo "<p>{$string}<p>\n";
 	HTMLEnd();
+	die();
+}
+function RedirectIndex() {
+	header('HTTP/1.1 302 Found');
+	header('Location: /');
+	die();
+}
+function RedirectLogin() {
+	header('HTTP/1.1 302 Found');
+	header('Location: /login.php');
 	die();
 }
 function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadFontArr = null, bool $uploadSubtitle = false) {

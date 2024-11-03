@@ -23,6 +23,23 @@ if ($allowLogin) {
 }
 echo "</p>\n";
 echo "<p>开放登录当前" . ($allowLogin ? '启用' : '禁用') . ", 开放注册当前" . ($allowRegister ? (SourcePolicy['Public']['EmailExpireTime'] > 0 ? '启用' : '启用 (需要审批)') : '禁用') . ".</p>\n";
-echo "<p>当前, 你可以在 "  . Title . " 上<a href=\"search.php\">搜索字体</a>, <a href=\"subtitle.php\">手动使用字幕文本</a>对字幕进行一定的处理 ,也可通过与 " . Title . " 兼容的 PT 站对字幕进行一定的处理.</p>\n";
+echo "<p>当前, 你可以在 "  . Title . " 上";
+$matched = false;
+if ($loginPolicy[2]['AllowDownloadFont']) {
+	$matched = true;
+	echo "<a href=\"search.php\">搜索字体</a>";
+}
+if ($loginPolicy[2]['AllowDownloadFontArchive'] || $loginPolicy[2]['AllowDownloadSubsetSubtitle'] || $loginPolicy[2]['AllowDownloadSubsetSubtitleWithSeparateFont']) {
+	if (!$matched) {
+		$matched = true;
+	} else {
+		echo ", ";
+	}
+	echo "<a href=\"subtitle.php\">手动使用字幕文本</a>对字幕进行一定的处理";
+}
+if ($matched) {
+	echo ", 也可";
+}
+echo "通过与 " . Title . " 兼容的 PT 站 (若有) 对字幕进行一定的处理.</p>\n";
 HTMLEnd();
 ?>
