@@ -12,7 +12,9 @@ function IsLogin(): ?array {
 	}
 	if (SourcePolicy['Public']['PublicUID'] > 0) {
 		// Public users use the public policy, but the public policy is the default policy, so it is not only used by public users.
-		return ['Public', SourcePolicy['Public']['PublicUID'], SourcePolicy['Public']];
+		$publicSourcePolicy = SourcePolicy['Public'];
+		$publicSourcePolicy['AllowLogout'] = false;
+		return ['Public', SourcePolicy['Public']['PublicUID'], $publicSourcePolicy];
 	}
 	return null;
 }

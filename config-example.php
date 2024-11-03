@@ -23,7 +23,7 @@ define('SourcePolicy', array(
 	'Public' => array(
 		'key' => 'FontServer',
 		'AllowLogin' => true,
-		'AllowLogout' => false,
+		'AllowLogout' => true,
 		'AllowRegister' => true,
 		'AllowDownloadFont' => true,
 		'AllowDownloadFontArchive' => false,
