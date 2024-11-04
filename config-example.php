@@ -150,17 +150,15 @@ function Queue(): array {
 		}
 		sleep(1);
 	}
-	$queueInfo = [$minLock, $locks[$minLock], $lockRes];
-	register_shutdown_function('Unqueue', $queueInfo);
-	return $queueInfo;
+	return [$minLock, $locks[$minLock], $lockRes];
 }
-function Unqueue(array $queueInfo): bool {
-	if ($queueInfo[0] < 0) {
+function Unqueue(?array $queueInfo): bool {
+	if ($queueInfo === null || $queueInfo[0] < 0) {
 		return false;
 	}
 	if ($queueInfo[2] !== null) {
-		flock($lockRes, LOCK_UN);
-		fclose($lockRes);
+		flock($queueInfo[2], LOCK_UN);
+		fclose($queueInfo[2]);
 	}
 	return @unlink($queueInfo[1]);
 }

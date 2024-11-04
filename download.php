@@ -5,6 +5,12 @@ require_once('font.php');
 require_once('user.php');
 require_once('vendor/autoload.php');
 ini_set('memory_limit', MaxMemoryMB . 'M');
+$queueInfo = null;
+function dieWithQueue(string $status = '') {
+	global $queueInfo;
+	Unqueue($queueInfo);
+	die($status);
+}
 
 if (!isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_GET['sign'], $_GET['filename'])) {
 	dieHTML(":(", 'Download');
@@ -143,11 +149,11 @@ switch ($fileExt) {
 					unset($fontArr[$key]);
 				}
 				$archive->finish();
-				die();
+				dieWithQueue();
 			}
 			if ($isDownloadSubsetSubtitleWithoutSeparateFont) {
 				header("Content-Disposition: attachment; filename=" . Title . "_Subtitle; filename*=utf-8''[" . Title . "_SubsetSubtitle] " . rawurlencode($filename) . ".{$fileExt}");
-				die($subsetASSContent);
+				dieWithQueue($subsetASSContent);
 			}
 			if ($isDownloadSubsetSubtitleWithSeparateFont) {
 				$archive = new ZipStream\ZipStream(
@@ -170,7 +176,7 @@ switch ($fileExt) {
 					data: $subsetASSContent
 				);
 				$archive->finish();
-				die();
+				dieWithQueue();
 			}
 		}
 		break;
@@ -346,7 +352,7 @@ switch ($fileExt) {
 				}
 			}
 			$archive->finish();
-			die();
+			dieWithQueue();
 		}
 		break;
 	default:
