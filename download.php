@@ -361,29 +361,29 @@ switch ($fileExt) {
 }
 
 HTMLStart('Download', GetUserBar($source, $uid, false));
-echo "<script src=\"base64.js\"></script>\n";
-echo "<script>function Download(target, filename = null) { switch (target) { case 'font': case 'subsetSubtitle': case 'subsetSubtitleWithSeparateFont': break; case 'originalSubtitle':  let blob = new Blob([Base64.toUint8Array(downloadForm.querySelector('input[name=\"file\"]').value)]); let ele = document.createElement('a'); ele.setAttribute('download', filename); ele.href = window.URL.createObjectURL(blob); document.body.appendChild(ele); ele.click(); ele.remove(); return; default: console.log('Bad target: ' + target); return; break; } downloadForm.action = downloadForm.action.replace(/(&|\?)download=(1|0)/, '').replace(/(&|\?)mode=(font|subsetSubtitleWithSeparateFont|subsetSubtitle)/i, ''); downloadForm.action += ('&download=1&mode=' + target); downloadForm.submit(); }</script>\n";
+HTMLOutput("<script src=\"base64.js\"></script>");
+HTMLOutput("<script>function Download(target, filename = null) { switch (target) { case 'font': case 'subsetSubtitle': case 'subsetSubtitleWithSeparateFont': break; case 'originalSubtitle':  let blob = new Blob([Base64.toUint8Array(downloadForm.querySelector('input[name=\"file\"]').value)]); let ele = document.createElement('a'); ele.setAttribute('download', filename); ele.href = window.URL.createObjectURL(blob); document.body.appendChild(ele); ele.click(); ele.remove(); return; default: console.log('Bad target: ' + target); return; break; } downloadForm.action = downloadForm.action.replace(/(&|\?)download=(1|0)/, '').replace(/(&|\?)mode=(font|subsetSubtitleWithSeparateFont|subsetSubtitle)/i, ''); downloadForm.action += ('&download=1&mode=' + target); downloadForm.submit(); }</script>");
 if ($sourcePolicy['AllowDownloadFontArchive'] || $sourcePolicy['AllowDownloadSubsetSubtitle'] || $sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
-	echo "<form id=\"downloadForm\" method=\"POST\">\n";
-	echo "<input type=\"hidden\" name=\"file\" value=\"{$_POST['file']}\" />\n";
-	echo "<p><a href=\"javascript:Download('originalSubtitle', '" . htmlspecialchars("{$filename}.{$fileExt}") . "');\">下载原始字幕!</a></p>\n";
+	HTMLOutput("<form id=\"downloadForm\" method=\"POST\">");
+	HTMLOutput("<input type=\"hidden\" name=\"file\" value=\"{$_POST['file']}\" />");
+	HTMLOutput("<p><a href=\"javascript:Download('originalSubtitle', '" . htmlspecialchars("{$filename}.{$fileExt}") . "');\">下载原始字幕!</a></p>");
 	if ($sourcePolicy['AllowDownloadFontArchive']) {
-		echo "<p><a href=\"javascript:Download('font');\">下载打包字体!</a></p>\n";
+		HTMLOutput("<p><a href=\"javascript:Download('font');\">下载打包字体!</a></p>");
 	}
 	if ($sourcePolicy['AllowDownloadSubsetSubtitle']) {
-		echo "<p><a href=\"javascript:Download('subsetSubtitle');\">下载自动子集化字幕 (推荐, 嵌入字体)!</a></p>\n";
+		HTMLOutput("<p><a href=\"javascript:Download('subsetSubtitle');\">下载自动子集化字幕 (推荐, 嵌入字体)!</a></p>");
 	}
 	if ($sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
-		echo "<p><a href=\"javascript:Download('subsetSubtitleWithSeparateFont');\">下载自动子集化字幕 (非嵌入字体)!</a></p>\n";
+		HTMLOutput("<p><a href=\"javascript:Download('subsetSubtitleWithSeparateFont');\">下载自动子集化字幕 (非嵌入字体)!</a></p>");
 	}
-	echo "</form>\n";
+	HTMLOutput("</form>");
 }
-echo "<p>总字体数: " . count($subtitleFontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $subtitleFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
+HTMLOutput("<p>总字体数: " . count($subtitleFontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $subtitleFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>");
 $fontnameArr = array_unique(array_merge(array_column($fontArr, 'fontname'), array_column($fontArr, 'fontfullname'), array_column($fontArr, 'fontpsname')), SORT_REGULAR);
 $diffFontnameArr = array_diff($subtitleFontnameArr, $fontnameArr);
 $diffFontnameArrCount = count($diffFontnameArr);
 if ($diffFontnameArrCount > 0) {
-	echo "<p>缺失字体数: {$diffFontnameArrCount}, 字体名: " . htmlspecialchars(implode(',', $diffFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
+	HTMLOutput("<p>缺失字体数: {$diffFontnameArrCount}, 字体名: " . htmlspecialchars(implode(',', $diffFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>");
 }
 ShowTable($fontArr, true, ($sourcePolicy['AllowDownloadFont'] ? [$source, $uid, $torrentID, $timestamp] : null), (isset($_GET['upload_subtitle']) && $_GET['upload_subtitle'] == 1));
 HTMLEnd();

@@ -55,5 +55,6 @@ echo <<<html
 			</form>
 		</div>
 html;
+echo "\n";
 HTMLEnd();
 ?>

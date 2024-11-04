@@ -19,6 +19,7 @@ echo <<<html
 			</form>
 		</div>
 html;
+echo "\n";
 if (isset($_POST['fontname'])) {
 	ShowTable(SearchFonts($minSearchLength, $loginPolicy[2]['MaxSearchFontCount'], $_POST['fontname']), true, ($loginPolicy[2]['AllowDownloadFont'] ? [$loginPolicy[0], $loginPolicy[1], 0, time()] : null));
 }

@@ -367,36 +367,42 @@ function SearchFonts(int $minSearchLength, int $maxSearchFontCount, string $font
 	return $result;
 }
 function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadFontArr = null, bool $uploadSubtitle = false) {
-	echo "<p>" . ($foundFont ? '找到字体数: ' : '缺失字体数: ') . count($fontsResult) . "</p>\n";
-	echo "<div class=\"searchResult\">\n<table border=\"2\">\n";
-	echo "<thead>\n<tr>\n";
-	echo "<th>ID</th>\n";
-	echo "<th>Uploader</th>\n";
-	echo "<th>Font FileName</th>\n";
-	echo "<th>Font Name</th>\n";
-	echo "<th>Font FullName</th>\n";
-	echo "<th>Font PostScriptName</th>\n";
-	echo "<th>Font SubFamily</th>\n";
-	echo "<th>Font Size</th>\n";
-	echo "<th>Font Created Date</th>\n";
-	echo "</tr>\n</thead>\n<tbody>\n";
+	HTMLOutput("<p>" . ($foundFont ? '找到字体数: ' : '缺失字体数: ') . count($fontsResult) . "</p>");
+	HTMLOutput("<div class=\"searchResult\">");
+	HTMLOutput("	<table border=\"2\">");
+	HTMLOutput("		<thead>");
+	HTMLOutput("			<tr>");
+	HTMLOutput("				<th>ID</th>");
+	HTMLOutput("				<th>Uploader</th>");
+	HTMLOutput("				<th>Font FileName</th>");
+	HTMLOutput("				<th>Font Name</th>");
+	HTMLOutput("				<th>Font FullName</th>");
+	HTMLOutput("				<th>Font PostScriptName</th>");
+	HTMLOutput("				<th>Font SubFamily</th>");
+	HTMLOutput("				<th>Font Size</th>");
+	HTMLOutput("				<th>Font Created Date</th>");
+	HTMLOutput("			</tr>");
+	HTMLOutput("		</thead>");
+	HTMLOutput("		<tbody>");
 	foreach ($fontsResult as &$fontResult) {
-		echo "<tr style=\"height: 42px; white-space: pre-line;\">\n";
-		echo "<td>{$fontResult['id']}</td>\n";
-		echo "<td>{$fontResult['uploader']}</td>\n";
+		HTMLOutput("			<tr style=\"height: 42px; white-space: pre-line;\">");
+		HTMLOutput("				<td>{$fontResult['id']}</td>");
+		HTMLOutput("				<td>{$fontResult['uploader']}</td>");
 		if ($downloadFontArr !== null && ($sign = GenerateSign($downloadFontArr[0], $downloadFontArr[1], $downloadFontArr[2], $downloadFontArr[3], $fontResult['fontfile'], ($uploadSubtitle ? 'Unknown' : sha1($fontResult['id'])))) !== null) {
-			echo "<td><a href=\"download.php?source={$downloadFontArr[0]}&uid={$downloadFontArr[1]}&torrent_id={$downloadFontArr[2]}&time={$downloadFontArr[3]}&sign={$sign}&filename=" . rawurlencode($fontResult['fontfile']) . ($uploadSubtitle ? '&upload_subtitle=1' : '') . "&font_id={$fontResult['id']}\">{$fontResult['fontfile']}</a></td>\n";
+			HTMLOutput("				<td><a href=\"download.php?source={$downloadFontArr[0]}&uid={$downloadFontArr[1]}&torrent_id={$downloadFontArr[2]}&time={$downloadFontArr[3]}&sign={$sign}&filename=" . rawurlencode($fontResult['fontfile']) . ($uploadSubtitle ? '&upload_subtitle=1' : '') . "&font_id={$fontResult['id']}\">{$fontResult['fontfile']}</a></td>");
 		} else {
-			echo "<td>{$fontResult['fontfile']}</td>\n";
+			HTMLOutput("				<td>{$fontResult['fontfile']}</td>");
 		}
-		echo "<td>{$fontResult['fontname']}</td>\n";
-		echo "<td>{$fontResult['fontfullname']}</td>\n";
-		echo "<td>{$fontResult['fontpsname']}</td>\n";
-		echo "<td>{$fontResult['fontsubfamily']}</td>\n";
-		echo "<td>" . round(($fontResult['fontsize'] / 1024 / 1024), 2) . " MB</td>\n";
-		echo "<td>{$fontResult['created_at']}</td>\n";
-		echo "</tr>\n";
+		HTMLOutput("				<td>{$fontResult['fontname']}</td>");
+		HTMLOutput("				<td>{$fontResult['fontfullname']}</td>");
+		HTMLOutput("				<td>{$fontResult['fontpsname']}</td>");
+		HTMLOutput("				<td>{$fontResult['fontsubfamily']}</td>");
+		HTMLOutput("				<td>" . round(($fontResult['fontsize'] / 1024 / 1024), 2) . " MB</td>");
+		HTMLOutput("				<td>{$fontResult['created_at']}</td>");
+		HTMLOutput("			</tr>");
 	}
-	echo "</tbody>\n</table>\n</div>\n";
+	HTMLOutput("		</tbody>");
+	HTMLOutput("	</table>");
+	HTMLOutput("</div>");
 }
 ?>

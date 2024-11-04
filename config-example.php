@@ -84,34 +84,38 @@ function HTMLStart(string $prefix = '', string $userbar = null) {
 	if ($prefix !== '') {
 		$title = "{$prefix} - {$title}";
 	}
-	$userbar = ($userbar !== null ? "<p>{$userbar}</p>" : '');
+	$userbar = ($userbar !== null ? "\n			<p>{$userbar}</p>" : '');
 	echo <<<html
-	<!DOCTYPE html>
-	<html>
-		<head>
-			<meta charset="utf-8">
-			<meta name="viewport" content="width=device-width, initial-scale=1.0">
-			<link rel="stylesheet" href="dark.css">
-			<link rel="icon" href="favicon.ico">
-			<title>{$title}</title>
-		</head>
-		<body>
-			<div class="header">
-				<h2>{$title}</h2>
-				{$userbar}
-			</div>
-			<hr>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="stylesheet" href="dark.css">
+		<link rel="icon" href="favicon.ico">
+		<title>{$title}</title>
+	</head>
+	<body>
+		<div class="header">
+			<h2>{$title}</h2>{$userbar}
+		</div>
+		<hr>
 html;
+	echo "\n";
+}
+function HTMLOutput(string $code) {
+	echo "		{$code}\n";
 }
 function HTMLEnd() {
 	echo <<<html
-		</body>
-	</html>
+	</body>
+</html>
 html;
+	echo "\n";
 }
 function dieHTML(string $string, string $prefix = '') {
 	HTMLStart($prefix);
-	echo "<p>{$string}<p>\n";
+	HTMLOutput("<p>{$string}<p>");
 	HTMLEnd();
 	die();
 }
