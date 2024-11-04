@@ -14,6 +14,7 @@ define('SMTPSSL', true);
 define('SMTPUsername', 'font@example.com');
 define('SMTPPassword', 'FontServer');
 define('CookieName', 'FontServer-Auth');
+define('MaxParallels', 2);
 define('LoginExpireTime', 3600);
 define('DownloadExpireTime', 300);
 define('FontPath', array('font'));
@@ -124,37 +125,43 @@ function RedirectLogin() {
 	header('Location: /login.php');
 	die();
 }
-function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadFontArr = null, bool $uploadSubtitle = false) {
-	echo "<p>" . ($foundFont ? '找到字体数: ' : '缺失字体数: ') . count($fontsResult) . "</p>\n";
-	echo "<div class=\"searchResult\">\n<table border=\"2\">\n";
-	echo "<thead>\n<tr>\n";
-	echo "<th>ID</th>\n";
-	echo "<th>Uploader</th>\n";
-	echo "<th>Font FileName</th>\n";
-	echo "<th>Font Name</th>\n";
-	echo "<th>Font FullName</th>\n";
-	echo "<th>Font PostScriptName</th>\n";
-	echo "<th>Font SubFamily</th>\n";
-	echo "<th>Font Size</th>\n";
-	echo "<th>Font Created Date</th>\n";
-	echo "</tr>\n</thead>\n<tbody>\n";
-	foreach ($fontsResult as &$fontResult) {
-		echo "<tr style=\"height: 42px; white-space: pre-line;\">\n";
-		echo "<td>{$fontResult['id']}</td>\n";
-		echo "<td>{$fontResult['uploader']}</td>\n";
-		if ($downloadFontArr !== null && ($sign = GenerateSign($downloadFontArr[0], $downloadFontArr[1], $downloadFontArr[2], $downloadFontArr[3], $fontResult['fontfile'], ($uploadSubtitle ? 'Unknown' : sha1($fontResult['id'])))) !== null) {
-			echo "<td><a href=\"download.php?source={$downloadFontArr[0]}&uid={$downloadFontArr[1]}&torrent_id={$downloadFontArr[2]}&time={$downloadFontArr[3]}&sign={$sign}&filename=" . rawurlencode($fontResult['fontfile']) . ($uploadSubtitle ? '&upload_subtitle=1' : '') . "&font_id={$fontResult['id']}\">{$fontResult['fontfile']}</a></td>\n";
-		} else {
-			echo "<td>{$fontResult['fontfile']}</td>\n";
+function Queue(): array {
+	$locks = [];
+	for ($p = 1; $p <= MaxParallels; $p++) {
+		$pFilename = "FSLock-{$p}.lock";
+		if (!is_file($pFilename)) {
+			$locks[$p] = $pFilename;
+		} else if (($pFileCreationTime = filectime($pFilename)) !== false) {
+			$locks[$pFileCreationTime] = $pFilename;
 		}
-		echo "<td>{$fontResult['fontname']}</td>\n";
-		echo "<td>{$fontResult['fontfullname']}</td>\n";
-		echo "<td>{$fontResult['fontpsname']}</td>\n";
-		echo "<td>{$fontResult['fontsubfamily']}</td>\n";
-		echo "<td>" . round(($fontResult['fontsize'] / 1024 / 1024), 2) . " MB</td>\n";
-		echo "<td>{$fontResult['created_at']}</td>\n";
-		echo "</tr>\n";
 	}
-	echo "</tbody>\n</table>\n</div>\n";
+	ksort($locks);
+	$minLock = array_key_first($locks);
+	if ($minLock === null) {
+		return [-1];
+	} else if ($minLock > 2333 && $minLock < (time() - 300)) {
+		Unqueue([0, $locks[$minLock], null]);
+	}
+	$lockRes = fopen($locks[$minLock], 'w');
+	$waitSec = 0;
+	while (!flock($lockRes, LOCK_EX | LOCK_NB)) {
+		if (($waitSec++) > 12) {
+			return [-2];
+		}
+		sleep(1);
+	}
+	$queueInfo = [$minLock, $locks[$minLock], $lockRes];
+	register_shutdown_function('Unqueue', $queueInfo);
+	return $queueInfo;
+}
+function Unqueue(array $queueInfo): bool {
+	if ($queueInfo[0] < 0) {
+		return false;
+	}
+	if ($queueInfo[2] !== null) {
+		flock($lockRes, LOCK_UN);
+		fclose($lockRes);
+	}
+	return @unlink($queueInfo[1]);
 }
 ?>
