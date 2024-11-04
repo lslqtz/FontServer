@@ -115,7 +115,7 @@ html;
 }
 function dieHTML(string $string, string $prefix = '') {
 	HTMLStart($prefix);
-	HTMLOutput("<p>{$string}<p>");
+	HTMLOutput("<p>{$string}</p>");
 	HTMLEnd();
 	die();
 }
