@@ -84,7 +84,7 @@ if ($sign === null) {
 }
 
 $fontArr = [];
-$fontnameArr = [];
+$subtitleFontnameArr = [];
 
 if (($decodedUploadFile = base64_decode($_POST['file'])) === false || empty($decodedUploadFile)) {
 	dieHTML("坏文件!", 'Download');
@@ -103,17 +103,17 @@ switch ($fileExt) {
 		$subsetASSContent = ($isDownloadSubsetSubtitle ? '' : null);
 		$uploadFileContentArr = explode("\n", ConvertEncode($decodedUploadFile));
 		foreach ($uploadFileContentArr as $uploadFileLine) {
-			if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
+			if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				break;
 			}
-			ParseSubtitleFont($uploadFileLine, $fontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
+			ParseSubtitleFont($uploadFileLine, $subtitleFontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
 		}
-		if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
+		if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 			dieHTML("太多的字体!", 'Download');
 		}
-		$fontArr = GetFontByNameArr($sourcePolicy['MaxDownloadFontCount'], $fontnameArr);
+		$fontArr = GetFontByNameArr($sourcePolicy['MaxDownloadFontCount'], $subtitleFontnameArr);
 		if (count($fontArr) <= 0) {
-			dieHTML("找不到字体!\n字体数: " . count($fontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5), 'Download');
+			dieHTML("找不到字体!\n字体数: " . count($subtitleFontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $subtitleFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5), 'Download');
 		}
 		if ($isDownload) {
 			$queueInfo = Queue();
@@ -200,7 +200,7 @@ switch ($fileExt) {
 			dieHTML("读取字幕压缩包时发生错误!", 'Download');
 		}
 		for ($i = 0; $i < $subtitleArchive->numFiles; $i++) {
-			if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
+			if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				break;
 			}
 			$currentType = '';
@@ -208,7 +208,7 @@ switch ($fileExt) {
 			$foundFontIndex = false;
 			$matchedTypes = [];
 			$subsetASSContent = ($isDownloadSubsetSubtitle ? '' : null);
-			$tmpFontnameArr = [];
+			$tmpSubtitleFontnameArr = [];
 			$subtitleFileName = $subtitleArchive->getNameIndex($i);
 			if (stripos($subtitleFileName, '__MACOSX') !== false) {
 				continue;
@@ -228,23 +228,23 @@ switch ($fileExt) {
 			}
 			$subtitleContentArr = explode("\n", ConvertEncode($subtitleContent));
 			foreach ($subtitleContentArr as $subtitleContentLine) {
-				if (count($tmpFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
-					$fontnameArr = $tmpFontnameArr;
+				if (count($tmpSubtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
+					$subtitleFontnameArr = $tmpSubtitleFontnameArr;
 					break 2;
 				}
-				ParseSubtitleFont($subtitleContentLine, $tmpFontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
+				ParseSubtitleFont($subtitleContentLine, $tmpSubtitleFontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
 			}
-			$fontnameArr = array_unique(array_merge($fontnameArr, $tmpFontnameArr), SORT_REGULAR);
-			if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
+			$subtitleFontnameArr = array_unique(array_merge($subtitleFontnameArr, $tmpSubtitleFontnameArr), SORT_REGULAR);
+			if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				break;
 			}
-			$subsetASSFiles[$subtitleFileName] = [$tmpFontnameArr, $subsetASSContent];
+			$subsetASSFiles[$subtitleFileName] = [$tmpSubtitleFontnameArr, $subsetASSContent];
 		}
 		$subtitleArchive->close();
 		fclose($uploadFile);
 		unlink($uploadTmpFilename);
-		unset($uploadFile, $uploadTmpFilename, $subtitleArchive, $subsetASSContent, $tmpFontnameArr);
-		if (count($fontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
+		unset($uploadFile, $uploadTmpFilename, $subtitleArchive, $subsetASSContent, $tmpSubtitleFontnameArr);
+		if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 			dieHTML("太多的字体!", 'Download');
 		}
 		$subsetASSFontArr = [];
@@ -260,7 +260,7 @@ switch ($fileExt) {
 		}
 		$fontArr = array_unique(array_merge($fontArr, ...array_values($subsetASSFontArr)), SORT_REGULAR);
 		if (count($fontArr) <= 0) {
-			dieHTML("找不到字体!\n字体数: " . count($fontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5), 'Download');
+			dieHTML("找不到字体!\n字体数: " . count($subtitleFontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $subtitleFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5), 'Download');
 		}
 		if ($isDownload) {
 			$queueInfo = Queue();
@@ -303,7 +303,7 @@ switch ($fileExt) {
 					// 准备好所需的子集化字幕用附加字体信息.
 					$fontInfoArr = null;
 					$subsetFontASSContent = [];
-					$mapFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar, $isDownloadSubsetSubtitleWithSeparateFont);
+					$mapSubtitleFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar, $isDownloadSubsetSubtitleWithSeparateFont);
 					unset($fontArr, $uniqueChar);
 					$db = null;
 					if ($isDownloadSubsetSubtitleWithSeparateFont) {
@@ -317,7 +317,7 @@ switch ($fileExt) {
 						}
 					}
 					foreach ($subsetASSFiles as $filename2 => &$arr) {
-						ReplaceFontArr($mapFontnameArr, $arr[1], $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
+						ReplaceFontArr($mapSubtitleFontnameArr, $arr[1], $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
 						$archive->addFile(
 							fileName: $filename2,
 							data: $arr[1]
@@ -378,7 +378,13 @@ if ($sourcePolicy['AllowDownloadFontArchive'] || $sourcePolicy['AllowDownloadSub
 	}
 	echo "</form>\n";
 }
-echo "<p>字体数: " . count($fontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $fontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
+echo "<p>总字体数: " . count($subtitleFontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $subtitleFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
+$fontnameArr = array_unique(array_merge(array_column($fontArr, 'fontname'), array_column($fontArr, 'fontfullname'), array_column($fontArr, 'fontpsname')), SORT_REGULAR);
+$diffFontnameArr = array_diff($subtitleFontnameArr, $fontnameArr);
+$diffFontnameArrCount = count($diffFontnameArr);
+if ($diffFontnameArrCount > 0) {
+	echo "<p>缺失字体数: {$diffFontnameArrCount}, 字体名: " . htmlspecialchars(implode(',', $diffFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>\n";
+}
 ShowTable($fontArr, true, ($sourcePolicy['AllowDownloadFont'] ? [$source, $uid, $torrentID, $timestamp] : null), (isset($_GET['upload_subtitle']) && $_GET['upload_subtitle'] == 1));
 HTMLEnd();
 ?>
