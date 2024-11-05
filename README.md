@@ -26,3 +26,27 @@
 允许用户通过上传字体来赚取贡献值完善字体库, 并通过用户的贡献值来调整源策略.
 
 通过 Scraper, 可以将字体信息抓取至数据库 (可能有内存泄漏). 字体服务器支持配置多个字体路径, 从前至后尝试, 因此字体可同时存储在多个路径或磁盘.
+
+Nginx config:
+```
+server {
+	listen 80;
+	server_name font.acgvideo.cn;
+	root /var/www/html/font;
+	index index.php index.htm index.html;
+
+	#client_max_body_size 30M;
+
+	location /font/ {
+		internal;
+	}
+	location ~ \.php$ {
+		sendfile off;
+		add_header Cache-Control 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0';
+		fastcgi_pass unix:/run/php-fpm/www.sock;
+		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		fastcgi_param PHP_VALUE "post_max_size=30M\nupload_max_filesize=30M";
+		include fastcgi_params;
+	}
+}
+```
