@@ -39,6 +39,8 @@ server {
 
 	location /font/ {
 		internal;
+		max_ranges 0;
+		add_header 'Accept-Ranges' 'none';
 	}
 	location ~ \.php$ {
 		sendfile off;
