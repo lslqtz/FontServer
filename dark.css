@@ -19,6 +19,10 @@ a {
 	margin-top: 8px;
 	margin-bottom: 8px;
 }
+.fontResult {
+	overflow-x: auto;
+	white-space: nowrap;
+}
 .login label, .register label {
 	display: inline-block;
 	width: 45px;

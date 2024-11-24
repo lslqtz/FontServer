@@ -368,7 +368,7 @@ function SearchFonts(int $minSearchLength, int $maxSearchFontCount, string $font
 }
 function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadFontArr = null, bool $uploadSubtitle = false) {
 	HTMLOutput("<p>" . ($foundFont ? '找到字体数: ' : '缺失字体数: ') . count($fontsResult) . "</p>");
-	HTMLOutput("<div class=\"searchResult\">");
+	HTMLOutput("<div class=\"fontResult\">");
 	HTMLOutput("	<table border=\"2\">");
 	HTMLOutput("		<thead>");
 	HTMLOutput("			<tr>");
