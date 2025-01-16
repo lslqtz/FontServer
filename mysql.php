@@ -32,7 +32,7 @@ function Install() {
 		`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`) USING BTREE,
 		UNIQUE KEY `index_unique` (`source`,`user_id`,`torrent_id`,`download_id`) USING BTREE
-	) ENGINE=InnoDB AUTO_INCREMENT=2195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
+	) ENGINE=InnoDB AUTO_INCREMENT=2195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
 	$db->exec("CREATE TABLE `users` (
 		`id` bigint NOT NULL AUTO_INCREMENT,
 		`username` varchar(123) NOT NULL,
@@ -44,18 +44,19 @@ function Install() {
 		PRIMARY KEY (`id`) USING BTREE,
 		UNIQUE KEY `index_unique_username` (`username`) USING BTREE,
 		UNIQUE KEY `index_unique_email` (`email`) USING BTREE
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
 	$db->exec("CREATE TABLE `fonts` (
 		`id` bigint NOT NULL,
 		`fontname` varchar(123) DEFAULT NULL,
 		`fontfullname` varchar(123) DEFAULT NULL,
 		`fontpsname` varchar(123) DEFAULT NULL,
 		`fontsubfamily` varchar(123) DEFAULT NULL,
+		`fontversion` varchar(123) DEFAULT NULL,
 		KEY `index_id` (`id`),
 		KEY `index_fontname` (`fontname`),
 		KEY `index_fontfullname` (`fontfullname`),
 		KEY `index_fontpsname` (`fontpsname`)
-	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
 	$db->exec("CREATE TABLE `fonts_meta` (
 		`id` bigint NOT NULL AUTO_INCREMENT,
 		`uploader` int DEFAULT NULL,
@@ -64,6 +65,6 @@ function Install() {
 		`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`),
 		UNIQUE KEY `index_unique` (`fontfile`)
-	) ENGINE=InnoDB AUTO_INCREMENT=19230 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci");
+	) ENGINE=InnoDB AUTO_INCREMENT=19230 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
 }
 ?>
