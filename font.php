@@ -60,7 +60,7 @@ function AddFontMeta(int $uploader, string $fontfile, int $fontsize, bool $force
 	$stmt->closeCursor();
 	return $rowID;
 }
-function AddFont(int $rowID, ?string $fontname, ?string $fontfullname, ?string $fontpsname, ?string $fontsubfamily): bool {
+function AddFont(int $rowID, ?string $fontname, ?string $fontfullname, ?string $fontpsname, ?string $fontsubfamily, ?string $fontversion): bool {
 	global $db;
 	if (!ConnectDB()) {
 		if (function_exists('LogStr')) {
@@ -81,9 +81,9 @@ function AddFont(int $rowID, ?string $fontname, ?string $fontfullname, ?string $
 	} else if (empty($fontname)) {
 		$fontname = $fontfullname;
 	}
-	$stmt = $db->prepare("INSERT INTO `fonts` (`id`, `fontname`, `fontfullname`, `fontpsname`, `fontsubfamily`) VALUES (?, ?, ?, ?, ?)");
+	$stmt = $db->prepare("INSERT INTO `fonts` (`id`, `fontname`, `fontfullname`, `fontpsname`, `fontsubfamily`, `fontversion`) VALUES (?, ?, ?, ?, ?, ?)");
 	try {
-		if (!$stmt->execute([$rowID, $fontname, $fontfullname, $fontpsname, $fontsubfamily])) {
+		if (!$stmt->execute([$rowID, $fontname, $fontfullname, $fontpsname, $fontsubfamily, $fontversion])) {
 			return false;
 		}
 	} catch (Throwable $e) {
@@ -153,7 +153,7 @@ function GetFontByNameArr(int $maxDownloadFontCount, array $fontname): array {
 		return [];
 	}
 	$fontnameInPlaceholder = (str_repeat('?,', count($fontname) - 1) . '?');
-	$stmt = $db->prepare("SELECT MAX(`fonts`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontfullname` IN ({$fontnameInPlaceholder}) GROUP BY `fonts`.`fontfullname` LIMIT {$maxDownloadFontCount}");
+	$stmt = $db->prepare("SELECT MAX(`fonts`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily`, GROUP_CONCAT(DISTINCT `fonts`.`fontversion` SEPARATOR '\n') AS `fontversion` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontfullname` IN ({$fontnameInPlaceholder}) GROUP BY `fonts`.`fontfullname` LIMIT {$maxDownloadFontCount}");
 	try {
 		if (!$stmt->execute($fontname)) {
 			return [];
@@ -176,7 +176,7 @@ function GetFontByNameArr(int $maxDownloadFontCount, array $fontname): array {
 		return $result;
 	}
 	$fontnameInPlaceholder2 = (str_repeat('?,', count($fontname) - 1) . '?');
-	$stmt2 = $db->prepare("SELECT MAX(`fonts`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontname` IN ({$fontnameInPlaceholder2}) GROUP BY `fonts`.`fontname` LIMIT {$maxDownloadFontCount}");
+	$stmt2 = $db->prepare("SELECT MAX(`fonts`.`id`) AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, MAX(`fonts_meta`.`created_at`) AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily`, GROUP_CONCAT(DISTINCT `fonts`.`fontversion` SEPARATOR '\n') AS `fontversion` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontname` IN ({$fontnameInPlaceholder2}) GROUP BY `fonts`.`fontname` LIMIT {$maxDownloadFontCount}");
 	try {
 		if (!$stmt2->execute($fontname)) {
 			return $result;
@@ -229,15 +229,15 @@ function DetectDuplicateFont(string $fontext, ?string $fontname, ?string $fontfu
 		if (function_exists('LogStr')) {
 			LogStr('无法连接到数据库', -1);
 		}
-		return [-1];
+		return [-2];
 	}
 	$stmt = $db->prepare("SELECT `fonts`.`id`, `fonts_meta`.`fontfile` FROM `fonts` JOIN `fonts_meta` ON `fonts_meta`.`id` = `fonts`.`id` WHERE `fonts`.`fontname` = ? AND `fonts`.`fontfullname` = ? AND `fonts`.`fontsubfamily` = ? LIMIT 1");
 	try {
 		if (!$stmt->execute([$fontname, $fontfullname, $fontsubfamily])) {
-			return [-1];
+			return [-3];
 		}
 	} catch (Throwable $e) {
-		return [-1];
+		return [-4];
 	}
 
 	$fontInfo = $stmt->fetch(PDO::FETCH_NUM);
@@ -353,7 +353,7 @@ function SearchFonts(int $minSearchLength, int $maxSearchFontCount, string $font
 		return [];
 	}
 	$fontname = '%' . str_replace(' ', '%', $fontname) . '%';
-	$stmt = $db->prepare("SELECT `fonts_meta`.`id` AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, `fonts_meta`.`created_at` AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily` FROM `fonts_meta` JOIN `fonts` ON `fonts`.`id` = `fonts_meta`.`id` WHERE `fonts_meta`.`fontfile` LIKE ? OR `fonts`.`fontname` LIKE ? OR `fonts`.`fontfullname` LIKE ? OR `fonts`.`fontpsname` LIKE ? GROUP BY `fonts_meta`.`id` ORDER BY `fonts_meta`.`created_at` DESC LIMIT {$maxSearchFontCount}");
+	$stmt = $db->prepare("SELECT `fonts_meta`.`id` AS `id`, `fonts_meta`.`uploader`, `fonts_meta`.`fontfile`, `fonts_meta`.`fontsize`, `fonts_meta`.`created_at` AS `created_at`, GROUP_CONCAT(DISTINCT `fonts`.`fontname` SEPARATOR '\n') AS `fontname`, GROUP_CONCAT(DISTINCT `fonts`.`fontfullname` SEPARATOR '\n') AS `fontfullname`, GROUP_CONCAT(DISTINCT `fonts`.`fontpsname` SEPARATOR '\n') AS `fontpsname`, GROUP_CONCAT(DISTINCT `fonts`.`fontsubfamily` SEPARATOR '\n') AS `fontsubfamily`, GROUP_CONCAT(DISTINCT `fonts`.`fontversion` SEPARATOR '\n') AS `fontversion` FROM `fonts_meta` JOIN `fonts` ON `fonts`.`id` = `fonts_meta`.`id` WHERE `fonts_meta`.`fontfile` LIKE ? OR `fonts`.`fontname` LIKE ? OR `fonts`.`fontfullname` LIKE ? OR `fonts`.`fontpsname` LIKE ? GROUP BY `fonts_meta`.`id` ORDER BY `fonts_meta`.`created_at` DESC LIMIT {$maxSearchFontCount}");
 	try {
 		if (!$stmt->execute([$fontname, $fontname, $fontname, $fontname])) {
 			return [];
@@ -379,6 +379,7 @@ function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadF
 	HTMLOutput("				<th>Font FullName</th>");
 	HTMLOutput("				<th>Font PostScriptName</th>");
 	HTMLOutput("				<th>Font SubFamily</th>");
+	HTMLOutput("				<th>Font Version</th>");
 	HTMLOutput("				<th>Font Size</th>");
 	HTMLOutput("				<th>Font Created Date</th>");
 	HTMLOutput("			</tr>");
@@ -397,6 +398,7 @@ function ShowTable(array $fontsResult, bool $foundFont = true, ?array $downloadF
 		HTMLOutput("				<td>{$fontResult['fontfullname']}</td>");
 		HTMLOutput("				<td>{$fontResult['fontpsname']}</td>");
 		HTMLOutput("				<td>{$fontResult['fontsubfamily']}</td>");
+		HTMLOutput("				<td>{$fontResult['fontversion']}</td>");
 		HTMLOutput("				<td>" . round(($fontResult['fontsize'] / 1024 / 1024), 2) . " MB</td>");
 		HTMLOutput("				<td>{$fontResult['created_at']}</td>");
 		HTMLOutput("			</tr>");

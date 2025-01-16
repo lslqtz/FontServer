@@ -77,7 +77,7 @@ foreach ($fontfiles as $fontfile) {
 						} else if (empty($fontname)) {
 							$fontname = $fontfullname;
 						}
-						$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $font->getFontSubfamily(3, $i, $languageID)];
+						$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $font->getFontSubfamily(3, $i, $languageID), $font->getFontVersion(3, $i, $languageID)];
 					}
 				}
 				$fontsInfo->next();
@@ -104,7 +104,7 @@ foreach ($fontfiles as $fontfile) {
 					if (substr_count($fontname, '?') > 3 && substr_count($fontfullname, '?') > 3) {
 						continue;
 					}
-					$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $fontsInfo->getFontSubfamily(3, $i, $languageID)];
+					$fontsInfoArr[] = [$fontname, $fontfullname, $fontpsname, $fontsInfo->getFontSubfamily(3, $i, $languageID), $fontsInfo->getFontVersion(3, $i, $languageID)];
 				}
 			}
 		}
@@ -153,11 +153,11 @@ foreach ($fontfiles as $fontfile) {
 		continue;
 	}
 	foreach ($fontsInfoArr as &$fontsInfo) {
-		if (!AddFont($rowID, $fontsInfo[0], $fontsInfo[1], $fontsInfo[2], $fontsInfo[3])) {
-			LogStr("添加字体失败: {$rowID}, {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
+		if (!AddFont($rowID, $fontsInfo[0], $fontsInfo[1], $fontsInfo[2], $fontsInfo[3], $fontsInfo[4])) {
+			LogStr("添加字体失败: {$rowID}, {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}, {$fontsInfo[4]}", -1);
 			continue;
 		}
-		LogStr("添加字体成功: {$rowID}, {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}");
+		LogStr("添加字体成功: {$rowID}, {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}, {$fontsInfo[4]}");
 	}
 }
 ?>
