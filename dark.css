@@ -15,17 +15,35 @@ a {
 .header p {
 	margin-left: auto;
 }
-.downloadLink {
-	margin-top: 8px;
-	margin-bottom: 8px;
+.login label, .register label {
+	display: inline-block;
+	width: 45px;
 }
 .fontResult {
 	overflow-x: auto;
 	white-space: nowrap;
 }
-.login label, .register label {
-	display: inline-block;
-	width: 45px;
+.fontResult tbody tr {
+	height: 42px;
+	white-space: pre-line;
+}
+.fontid {
+	width: 50px;
+}
+.fontuploader, .fontsize {
+	width: 70px;
+}
+.fontfile {
+	width: 235px;
+}
+.fontname, .fontfullname, .fontpsname {
+	width: 255px;
+}
+.fontsubfamily, .fontversion {
+	width: 120px;
+}
+.fontcreatedat {
+	width: 140px;
 }
 @media (prefers-color-scheme: dark) {
 	html {
