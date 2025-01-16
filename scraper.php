@@ -128,7 +128,7 @@ foreach ($fontfiles as $fontfile) {
 			continue;
 			//}
 		} else if ($fontArr[0] < 0) {
-			LogStr("跳过错误字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}", -1);
+			LogStr("跳过错误字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]} (Errno: {$fontArr[0]}", -1);
 			unset($fontsInfoArr[$key]);
 		}
 	}
