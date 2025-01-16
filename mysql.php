@@ -32,7 +32,7 @@ function Install() {
 		`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`) USING BTREE,
 		UNIQUE KEY `index_unique` (`source`,`user_id`,`torrent_id`,`download_id`) USING BTREE
-	) ENGINE=InnoDB AUTO_INCREMENT=2195 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
+	) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
 	$db->exec("CREATE TABLE `users` (
 		`id` bigint NOT NULL AUTO_INCREMENT,
 		`username` varchar(123) NOT NULL,
@@ -65,6 +65,6 @@ function Install() {
 		`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`),
 		UNIQUE KEY `index_unique` (`fontfile`)
-	) ENGINE=InnoDB AUTO_INCREMENT=19230 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
+	) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
 }
 ?>

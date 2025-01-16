@@ -1,5 +1,6 @@
 <?php
 if (PHP_SAPI !== 'cli') { die(); }
+set_time_limit(0);
 ini_set('memory_limit', '1024M');
 require_once('config.php');
 require_once('mysql.php');
