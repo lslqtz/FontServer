@@ -13,11 +13,11 @@ function LogStr(string $message, int $status = 0) {
 	$logStr = "[{$date} {$time}][{$logType}] {$message}.\n";
 	echo $logStr;
 }
-if (!is_dir('font2')) {
-	LogStr('找不到 font2 目录', -1);
+if (!is_dir('font_import')) {
+	LogStr('找不到 font_import 目录', -1);
 	die();
 }
-$fontfiles = GetAllFontsFilename('font2');
+$fontfiles = GetAllFontsFilename('font_import');
 foreach ($fontfiles as $fontfile) {
 	unset($font, $fontsInfo, $fontsInfoArr);
 	gc_collect_cycles();
@@ -51,7 +51,7 @@ foreach ($fontfiles as $fontfile) {
 		LogStr("转换 otf 成功: {$oldFontPath}");
 		//unlink($oldFontPath);
 		$fontExt = 'ttf';
-		$oldFontPath = ($fontFileInfo['filename'] . ".ttf");
+		$oldFontPath = ($fontFileInfo['dirname'] . '/' . $fontFileInfo['filename'] . ".ttf");
 	}
 	$fontFilename = preg_replace('/\d{10,}/', '', $fontFileInfo['filename']);
 	$fontsInfoArr = [];

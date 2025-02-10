@@ -380,7 +380,7 @@ if ($sourcePolicy['AllowDownloadFontArchive'] || $sourcePolicy['AllowDownloadSub
 }
 HTMLOutput("<p>总字体数: " . count($subtitleFontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $subtitleFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>");
 $fontnameArr = array_unique(array_merge(array_column($fontArr, 'fontname'), array_column($fontArr, 'fontfullname'), array_column($fontArr, 'fontpsname')), SORT_REGULAR);
-$diffFontnameArr = array_diff($subtitleFontnameArr, $fontnameArr);
+$diffFontnameArr = array_udiff($subtitleFontnameArr, $fontnameArr, 'strcasecmp');
 $diffFontnameArrCount = count($diffFontnameArr);
 if ($diffFontnameArrCount > 0) {
 	HTMLOutput("<p>缺失字体数: {$diffFontnameArrCount}, 字体名: " . htmlspecialchars(implode(',', $diffFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5) . "</p>");
