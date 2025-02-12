@@ -4,20 +4,6 @@ require_once('mysql.php');
 require_once('vendor/autoload.php');
 define('BetterExt', ['ttf', 'ttc']);
 
-function GetAllFontsFilename(string $fontdir) {
-	$dir = new RecursiveDirectoryIterator(
-	    $fontdir,
-	    RecursiveDirectoryIterator::KEY_AS_FILENAME | 
-	    RecursiveDirectoryIterator::CURRENT_AS_FILEINFO
-	);
-	$files = new RegexIterator(
-	    new RecursiveIteratorIterator($dir),
-	    '#^.*\.([tT][tT][fF]|[tT][tT][cC]|[oO][tT][fF])$#',
-	    RegexIterator::MATCH,
-	    RegexIterator::USE_KEY
-	);
-	return $files;
-}
 function AddFontDownloadHistory(string $source, int $uid, int $torrentID, int $downloadID): bool {
 	global $db;
 	if (!ConnectDB()) {
