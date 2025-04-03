@@ -220,8 +220,7 @@ switch ($fileExt) {
 			try {
 				$subtitleContent = $subtitleArchive->getContents($subtitleArchiveFile);
 			} catch (Throwable $e) {
-				var_dump($e);
-				die();
+				$subtitleContent = null;
 			}
 			if (empty($subtitleContent)) {
 				continue;

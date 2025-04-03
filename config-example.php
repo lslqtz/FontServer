@@ -1,6 +1,7 @@
 <?php
 set_time_limit(300);
 date_default_timezone_set('Asia/Shanghai');
+putenv('LANG=C.UTF-8');
 define('Title', 'FontServer');
 define('MaxMemoryMB', 1024);
 define('CompressLevel', 3);

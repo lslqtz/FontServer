@@ -30,7 +30,7 @@ class SevenZipProcess
         $self = new self($path, $password, $binaryPath);
         $temp = ArchiveTemporaryDirectory::make();
         $self->outputDir = $temp->path();
-        $self->isDarwin = PHP_OS_FAMILY === 'Darwin';
+        $self->isDarwin = true;
 
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $rarExts = ['rar', 'cbr'];
@@ -49,7 +49,7 @@ class SevenZipProcess
         if (! $isValid) {
             if ($exception) {
                 $osFamily = PHP_OS_FAMILY;
-                $isDarwin = $osFamily === 'Darwin';
+                $isDarwin = true;
                 $message = "p7zip is not installed or not in the PATH. Please install p7zip and try again.\nYou can check this guide: https://gist.github.com/ewilan-riviere/85d657f9283fa6af255531d97da5d71d";
 
                 if ($isDarwin) {
