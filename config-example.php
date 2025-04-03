@@ -32,8 +32,9 @@ define('SourcePolicy', array(
 		'AllowDownloadSubsetSubtitleWithSeparateFont' => false,
 		'ProcessFontForEverySubtitle' => true, // false: High memory consumption, true: High performance consumption.
 		'MaxCacheFontCount' => 0,
-		'MaxFilesizeMB' => 2,
-		'MaxDownloadFontCount' => 12,
+		'MaxSubtitleFilesizeMB' => 1,
+		'MaxSubtitleFileCount' => 24,
+		'MaxDownloadFontCount' => 24,
 		'MinSearchLength' => 2,
 		'MaxSearchFontCount' => 100,
 		'EmailExpireTime' => 0, // 0: Manual approval.
@@ -49,7 +50,8 @@ define('SourcePolicy', array(
 		'AllowDownloadSubsetSubtitleWithSeparateFont' => true,
 		'ProcessFontForEverySubtitle' => true, // false: High memory consumption, true: High performance consumption.
 		'MaxCacheFontCount' => 0,
-		'MaxFilesizeMB' => 6,
+		'MaxSubtitleFilesizeMB' => 6,
+		'MaxSubtitleFileCount' => 100,
 		'MaxDownloadFontCount' => 48,
 		'MinSearchLength' => 2,
 		'MaxSearchFontCount' => 100

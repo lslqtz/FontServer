@@ -58,7 +58,7 @@ if (isset($_GET['font_id'])) {
 if (empty($_POST['file'])) {
 	dieHTML("坏参数!", 'Download');
 }
-if ((isset($_GET['upload_subtitle']) && $_GET['upload_subtitle'] == 1 && $fileExt !== 'ass') || !in_array($fileExt, ['ass', 'ssa', 'zip'])) {
+if ((isset($_GET['upload_subtitle']) && $_GET['upload_subtitle'] == 1 && $fileExt !== 'ass') || !in_array($fileExt, ['ass', 'ssa', 'zip', 'rar', '7z'])) {
 	dieHTML("坏扩展名!", 'Download');
 }
 
@@ -89,7 +89,7 @@ $subtitleFontnameArr = [];
 if (($decodedUploadFile = base64_decode($_POST['file'])) === false || empty($decodedUploadFile)) {
 	dieHTML("坏文件!", 'Download');
 }
-if ((strlen($decodedUploadFile) / 1024 / 1024) > $sourcePolicy['MaxFilesizeMB']) {
+if ((strlen($decodedUploadFile) / 1024 / 1024) > $sourcePolicy['MaxSubtitleFilesizeMB']) {
 	dieHTML("太大的文件!", 'Download');
 }
 
@@ -181,25 +181,20 @@ switch ($fileExt) {
 		}
 		break;
 	case 'zip':
-		$uploadTmpFilename = tempnam(SysCacheDir, Title . '_');
-		$uploadFile = fopen($uploadTmpFilename, ($fileExt === 'zip' ? 'wb+' : 'w+'));
-		if ($uploadFile === false) {
-			fclose($uploadFile);
-			dieHTML("读取字幕时发生错误!", 'Download');
-		}
-		fwrite($uploadFile, $decodedUploadFile);
-		unset($decodedUploadFile);
-		fseek($uploadFile, 0);
-		$subsetASSFiles = [];
-		$subtitleArchive = new \ZipArchive();
-		$subtitleArchive->open($uploadTmpFilename);
-		if ($subtitleArchive === false) {
-			$subtitleArchive->close();
-			fclose($uploadFile);
-			unlink($uploadTmpFilename);
+	case 'rar':
+	case '7z':
+		try {
+			$subtitleArchive = \Kiwilan\Archive\Archive::readFromString($decodedUploadFile, extension: $fileExt);
+		} catch (Throwable $e) {
 			dieHTML("读取字幕压缩包时发生错误!", 'Download');
 		}
-		for ($i = 0; $i < $subtitleArchive->numFiles; $i++) {
+		unset($decodedUploadFile);
+		$subsetASSFiles = [];
+		$subtitleArchiveFiles = $subtitleArchive->getFileItems();
+		if (count($subtitleArchiveFiles) > $sourcePolicy['MaxSubtitleFileCount']) {
+			dieHTML("太多的字幕!", 'Download');
+		}
+		foreach ($subtitleArchiveFiles as $subtitleArchiveFile) {
 			if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				break;
 			}
@@ -209,11 +204,11 @@ switch ($fileExt) {
 			$matchedTypes = [];
 			$subsetASSContent = ($isDownloadSubsetSubtitle ? '' : null);
 			$tmpSubtitleFontnameArr = [];
-			$subtitleFileName = $subtitleArchive->getNameIndex($i);
-			if (stripos($subtitleFileName, '__MACOSX') !== false) {
+			$subtitleFilePath = $subtitleArchiveFile->getPath();
+			if (stripos($subtitleFilePath, '__MACOSX') !== false) {
 				continue;
 			}
-			$fileInfo2 = pathinfo($subtitleFileName);
+			$fileInfo2 = pathinfo($subtitleFilePath);
 			$filename2 = $fileInfo2['filename'];
 			if ($filename2[0] === '.' || !isset($fileInfo2['extension'])) {
 				continue;
@@ -222,7 +217,12 @@ switch ($fileExt) {
 			if ($subtitleExt !== 'ass' && $subtitleExt !== 'ssa') {
 				continue;
 			}
-			$subtitleContent = $subtitleArchive->getFromName($subtitleFileName);
+			try {
+				$subtitleContent = $subtitleArchive->getContents($subtitleArchiveFile);
+			} catch (Throwable $e) {
+				var_dump($e);
+				die();
+			}
 			if (empty($subtitleContent)) {
 				continue;
 			}
@@ -238,12 +238,9 @@ switch ($fileExt) {
 			if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 				break;
 			}
-			$subsetASSFiles[$subtitleFileName] = [$tmpSubtitleFontnameArr, $subsetASSContent];
+			$subsetASSFiles[$subtitleFilePath] = [$tmpSubtitleFontnameArr, $subsetASSContent];
 		}
-		$subtitleArchive->close();
-		fclose($uploadFile);
-		unlink($uploadTmpFilename);
-		unset($uploadFile, $uploadTmpFilename, $subtitleArchive, $subsetASSContent, $tmpSubtitleFontnameArr);
+		unset($subtitleArchive, $subtitleArchiveFiles, $subsetASSContent, $subtitleContent, $subtitleContentArr, $tmpSubtitleFontnameArr);
 		if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 			dieHTML("太多的字体!", 'Download');
 		}

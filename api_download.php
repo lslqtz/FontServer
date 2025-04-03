@@ -66,7 +66,7 @@ $subtitleFontnameArr = [];
 if (($decodedUploadFile = base64_decode($_POST['file'])) === false || empty($decodedUploadFile)) {
 	dieJSON(-8, 'Bad file');
 }
-if ((strlen($decodedUploadFile) / 1024 / 1024) > $sourcePolicy['MaxFilesizeMB']) {
+if ((strlen($decodedUploadFile) / 1024 / 1024) > $sourcePolicy['MaxSubtitleFilesizeMB']) {
 	dieJSON(-9, 'Too big file');
 }
 

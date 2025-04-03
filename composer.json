@@ -1,0 +1,7 @@
+{
+    "require": {
+        "kiwilan/php-archive": "^2.3",
+        "phenx/php-font-lib": "^1.0",
+        "maennchen/zipstream-php": "^3.1"
+    }
+}

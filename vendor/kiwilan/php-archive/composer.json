@@ -1,0 +1,73 @@
+{
+    "name": "kiwilan/php-archive",
+    "version": "2.3.01",
+    "description": "PHP package to handle archives (.zip, .rar, .tar, .7z, .pdf) with unified API and hybrid solution (native/p7zip), designed to works with EPUB and CBA (.cbz, .cbr, .cb7, .cbt).",
+    "keywords": [
+        "php",
+        "archive",
+        "zip",
+        "rar",
+        "tar",
+        "pdf",
+        "ebook",
+        "epub",
+        "cbz",
+        "cbr",
+        "cbt",
+        "cb7",
+        "7z",
+        "7zip"
+    ],
+    "homepage": "https://github.com/kiwilan/php-archive",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ewilan Rivière",
+            "email": "ewilan.riviere@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "suggest": {
+        "ext-imagick": "*",
+        "ext-rar": "*"
+    },
+    "require": {
+        "php": "^8.1",
+        "smalot/pdfparser": "^2.4",
+        "spatie/temporary-directory": "^2.1"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.6",
+        "pestphp/pest": "^2.0",
+        "phpstan/phpstan": "^1.10",
+        "spatie/ray": "^1.28"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kiwilan\\Archive\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kiwilan\\Archive\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/pest",
+        "test-filter": "vendor/bin/pest --filter",
+        "test-parallel": "vendor/bin/pest --parallel",
+        "test-coverage": "vendor/bin/pest --coverage --min=80",
+        "test-coverage-parallel": "vendor/bin/pest --parallel --coverage",
+        "analyse": "vendor/bin/phpstan analyse",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
