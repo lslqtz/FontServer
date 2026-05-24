@@ -137,7 +137,7 @@ function GetSubsetFontASSContent(?FontLib\TrueType\File $fontInfo, string $mapFo
 		unlink($subFontTmpFile);
 	}
 }
-function ProcessFont(string $source, array &$font, string &$mapFontfile, array &$mapFontnameArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar, bool $subsetFontOnly = false): int {
+function ProcessFont(string $source, array &$font, string &$mapFontfile, array &$mapFontnameArr, ?array &$subsetFontASSContent, ?array &$uniqueChar, bool $subsetFontOnly = false, ?array &$cacheFontInfoArr = null): int {
 	$fontPath = GetFontPath($font['fontfile']);
 	if ($fontPath === null) {
 		return -2;
@@ -161,35 +161,45 @@ function ProcessFont(string $source, array &$font, string &$mapFontfile, array &
 		}
 		$mapFontnameArr[$fontpsname2] = $mapFontname;
 	}
-	if ($fontInfoArr === null || !isset($fontInfoArr[$font['fontfile']])) {
-		$fontInfo = GetMatchedFontInfo($fontPath, $mapFontnameArr);
-		if (SourcePolicy[$source]['MaxCacheFontCount'] > 0 && $fontInfoArr !== null && $fontInfo !== null) {
-			$fontInfoArr[$font['fontfile']] = &$fontInfo;
+
+	$fontInfo = null;
+	$shouldCloseImmediately = true;
+
+	if ($cacheFontInfoArr !== null && array_key_exists($font['fontfile'], $cacheFontInfoArr)) {
+		if ($cacheFontInfoArr[$font['fontfile']] !== null) {
+			$fontInfo = $cacheFontInfoArr[$font['fontfile']];
+			$shouldCloseImmediately = false;
+		} else {
+			$fontInfo = GetMatchedFontInfo($fontPath, $mapFontnameArr);
+			if ($fontInfo !== null) {
+				$cacheFontInfoArr[$font['fontfile']] = &$fontInfo;
+				$shouldCloseImmediately = false;
+			}
 		}
 	} else {
-		$fontInfo = $fontInfoArr[$font['fontfile']];
+		$fontInfo = GetMatchedFontInfo($fontPath, $mapFontnameArr);
 	}
-	if ($subsetFontASSContent !== null) {
+
+	if ($subsetFontASSContent !== null && $fontInfo !== null) {
 		if (!$subsetFontOnly) {
 			GetSubsetFontASSContent($fontInfo, $mapFontname, $mapFontfile, $subsetFontASSContent, $uniqueChar);
 		} else {
 			GetSubsetFontContent($font, $fontInfo, $mapFontname, $mapFontfile, $subsetFontASSContent, $uniqueChar);
 		}
 	}
-	if ($fontInfoArr === null) {
+
+	if ($fontInfo !== null && $shouldCloseImmediately) {
 		CloseFontInfo($fontInfo);
-	} else if ($fontInfoArr !== null && count($fontInfoArr) > SourcePolicy[$source]['MaxCacheFontCount']) {
-		CloseFontInfo(array_shift($fontInfoArr));
 	}
 	return 0;
 }
-function ProcessFontArr(string $source, int $uid, int $torrentID, array &$fontArr, ?array &$fontInfoArr, ?array &$subsetFontASSContent, ?array &$uniqueChar, bool $subsetFontOnly = false): array {
+function ProcessFontArr(string $source, int $uid, int $torrentID, array &$fontArr, ?array &$subsetFontASSContent, ?array &$uniqueChar, bool $subsetFontOnly = false, ?array &$cacheFontInfoArr = null): array {
 	if (count($fontArr) > 0) {
 		$mapFontnameArr = [];
 		foreach ($fontArr as &$font) {
 			$fontExt = pathinfo($font['fontfile'], PATHINFO_EXTENSION);
 			$mapFontfile = GenerateRandomString(8) . ".{$fontExt}";
-			if (ProcessFont($source, $font, $mapFontfile, $mapFontnameArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar, $subsetFontOnly) === 0) {
+			if (ProcessFont($source, $font, $mapFontfile, $mapFontnameArr, $subsetFontASSContent, $uniqueChar, $subsetFontOnly, $cacheFontInfoArr) === 0) {
 				AddFontDownloadHistory($source, $uid, $torrentID, $font['id']);
 			}
 		}
@@ -197,11 +207,11 @@ function ProcessFontArr(string $source, int $uid, int $torrentID, array &$fontAr
 	}
 	return [];
 }
-function AutoProcessFontArr(string $source, int $uid, int $torrentID, array &$fontArr, ?array &$fontInfoArr, ?string &$subsetASSContent, ?array &$subsetFontASSContent, bool $subsetFontOnly = false) {
+function AutoProcessFontArr(string $source, int $uid, int $torrentID, array &$fontArr, ?string &$subsetASSContent, ?array &$subsetFontASSContent, bool $subsetFontOnly = false, ?array &$cacheFontInfoArr = null) {
 	if ($subsetASSContent !== null) {
 		$uniqueChar = [];
 		GetUniqueChar($subsetASSContent, $uniqueChar);
-		$mapFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar, $subsetFontOnly);
+		$mapFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $subsetFontASSContent, $uniqueChar, $subsetFontOnly, $cacheFontInfoArr);
 		ReplaceFontArr($mapFontnameArr, $subsetASSContent, $subsetFontASSContent, $subsetFontOnly);
 	}
 }

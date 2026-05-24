@@ -11,13 +11,13 @@ function dieWithQueue(int $code = -233, string $status = '') {
 	Unqueue($queueInfo);
 	dieJSON($code, $status);
 }
-function dieJSON(int $code = -233, string $status = ''); {
+function dieJSON(int $code = -233, string $status = '') {
 	$json = array('code' => $code, 'status' => "{$status}.");
 	die(json_encode($json, JSON_NUMERIC_CHECK));
 }
 
 if (!isset($_GET['action'], $_GET['filename'])) {
-	dieJSON(-1, ':(')
+	dieJSON(-1, ':(');
 }
 if ($_GET['action'] !== 'downloadSubsetSubtitle') {
 	dieJSON(-2, 'Bad action');
@@ -97,9 +97,8 @@ switch ($fileExt) {
 			if ($queueInfo[0] < 0) {
 				dieJSON(-11, 'Server is busy');
 			}
-			$fontInfoArr = null;
 			$subsetFontASSContent = [];
-			AutoProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetASSContent, $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
+			AutoProcessFontArr($source, $uid, $torrentID, $fontArr, $subsetASSContent, $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
 			$db = null;
 			ob_implicit_flush(true);
 			ob_end_clean();

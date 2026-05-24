@@ -118,7 +118,7 @@ function AddFontFile(string $fontPath, bool $localScraper = false): array {
 	$fontFilename = preg_replace('/\d{10,}/', '', $fontFileInfo['filename']);
 	$fontsInfoArr = [];
 	list($fontParseErr, $fontParseErrMsg, $fontsInfoArr) = ParseFontByFile($fontPath);
-	if ($fontParseErr > 0) {
+	if ($fontParseErr < 0) {
 		return [$fontParseErr, $fontParseErrMsg, $additionalMsgList];
 	}
 	$hasDupe = false;

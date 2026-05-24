@@ -120,9 +120,8 @@ switch ($fileExt) {
 			if ($queueInfo[0] < 0) {
 				dieHTML("服务器正忙, 请稍后再试!", 'Download');
 			}
-			$fontInfoArr = null;
 			$subsetFontASSContent = [];
-			AutoProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetASSContent, $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
+			AutoProcessFontArr($source, $uid, $torrentID, $fontArr, $subsetASSContent, $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
 			$db = null;
 			ob_implicit_flush(true);
 			ob_end_clean();
@@ -258,6 +257,34 @@ switch ($fileExt) {
 		if (count($fontArr) <= 0) {
 			dieHTML("找不到字体!\n字体数: " . count($subtitleFontnameArr) . ", 字体名: " . htmlspecialchars(implode(',', $subtitleFontnameArr), ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML5), 'Download');
 		}
+
+		// 计算每个字体的出现频次，选出排名前 MaxCacheFontCount 且出现多于 1 次的字体进行预先缓存标记
+		$cacheFontInfoArr = [];
+		$maxCacheCount = SourcePolicy[$source]['MaxCacheFontCount'];
+		if ($isDownload && $maxCacheCount > 0 && $sourcePolicy['ProcessFontForEverySubtitle']) {
+			$fontFileCounts = [];
+			foreach ($subsetASSFontArr as $filename2 => $fonts) {
+				$seenInThisSubtitle = [];
+				foreach ($fonts as $font) {
+					$fontFile = $font['fontfile'];
+					if (!in_array($fontFile, $seenInThisSubtitle)) {
+						$seenInThisSubtitle[] = $fontFile;
+						if (!isset($fontFileCounts[$fontFile])) {
+							$fontFileCounts[$fontFile] = 0;
+						}
+						$fontFileCounts[$fontFile]++;
+					}
+				}
+			}
+			arsort($fontFileCounts);
+			$cachedCount = 0;
+			foreach ($fontFileCounts as $fontFile => $count) {
+				if ($count > 1 && $cachedCount < $maxCacheCount) {
+					$cacheFontInfoArr[$fontFile] = null;
+					$cachedCount++;
+				}
+			}
+		}
 		if ($isDownload) {
 			$queueInfo = Queue();
 			if ($queueInfo[0] < 0) {
@@ -297,9 +324,8 @@ switch ($fileExt) {
 						GetUniqueChar($arr[1], $uniqueChar);
 					}
 					// 准备好所需的子集化字幕用附加字体信息.
-					$fontInfoArr = null;
 					$subsetFontASSContent = [];
-					$mapSubtitleFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $fontInfoArr, $subsetFontASSContent, $uniqueChar, $isDownloadSubsetSubtitleWithSeparateFont);
+					$mapSubtitleFontnameArr = ProcessFontArr($source, $uid, $torrentID, $fontArr, $subsetFontASSContent, $uniqueChar, $isDownloadSubsetSubtitleWithSeparateFont, $cacheFontInfoArr);
 					unset($fontArr, $uniqueChar);
 					$db = null;
 					if ($isDownloadSubsetSubtitleWithSeparateFont) {
@@ -320,13 +346,14 @@ switch ($fileExt) {
 						);
 						unset($subsetASSFiles[$filename2]);
 					}
+					CloseFontInfoArr($cacheFontInfoArr);
+					$db = null;
 				} else {
 					// 边输出边为每个字幕处理子集化.
-					$fontInfoArr = [];
 					foreach ($subsetASSFiles as $filename2 => &$arr) {
 						$subsetFontASSContent = [];
 						$arr[1] = ConvertEncode($arr[1]);
-						AutoProcessFontArr($source, $uid, $torrentID, $subsetASSFontArr[$filename2], $fontInfoArr, $arr[1], $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont);
+						AutoProcessFontArr($source, $uid, $torrentID, $subsetASSFontArr[$filename2], $arr[1], $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont, $cacheFontInfoArr);
 						if ($isDownloadSubsetSubtitleWithSeparateFont) {
 							// 仅 Subset Font 模式下, subsetFontASSContent 实际被当作 subsetFontContent 使用.
 							foreach ($subsetFontASSContent as $fontfilename2 => &$fontContent2) {
@@ -343,7 +370,7 @@ switch ($fileExt) {
 						);
 						unset($subsetASSFiles[$filename2]);
 					}
-					CloseFontInfoArr($fontInfoArr);
+					CloseFontInfoArr($cacheFontInfoArr);
 					$db = null;
 				}
 			}
