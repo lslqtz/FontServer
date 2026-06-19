@@ -24,7 +24,7 @@ function dieJSON(int $code = -233, string $status = '') {
 if (!isset($_GET['action'], $_GET['filename'])) {
 	dieJSON(-1, ':(');
 }
-if (!in_array($_GET['action'], ['downloadSubsetSubtitle', 'viewSubtitle'])) {
+if ($_GET['action'] !== 'downloadSubsetSubtitle') {
 	dieJSON(-2, 'Bad action');
 }
 $loginPolicy = IsLogin();
@@ -53,18 +53,32 @@ if (!in_array($fileExt, ['ass', 'ssa', 'zip', 'rar', '7z'])) {
 }
 
 $isDownloadReq = true;
-$isDownloadFont = false;
+$isDownloadFont = (isset($_GET['mode']) && $_GET['mode'] === 'font');
 if ($isDownloadFont && !$sourcePolicy['AllowDownloadFontArchive']) {
 	dieJSON(-7, 'Disabled action');
 }
-$isDownloadSubsetSubtitleWithoutSeparateFont = true;
+$isDownloadSubsetSubtitleWithoutSeparateFont = (!$isDownloadFont && isset($_GET['mode']) && $_GET['mode'] === 'subsetSubtitle');
 if ($isDownloadSubsetSubtitleWithoutSeparateFont && !$sourcePolicy['AllowDownloadSubsetSubtitle']) {
 	dieJSON(-7, 'Disabled action');
 }
-$isDownloadSubsetSubtitleWithSeparateFont = false;
+$isDownloadSubsetSubtitleWithSeparateFont = (!$isDownloadFont && !$isDownloadSubsetSubtitleWithoutSeparateFont && isset($_GET['mode']) && $_GET['mode'] === 'subsetSubtitleWithSeparateFont');
 if ($isDownloadSubsetSubtitleWithSeparateFont && !$sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
 	dieJSON(-7, 'Disabled action');
 }
+
+// Fallback logic in case no valid mode is provided (default to embedded subset)
+if (!$isDownloadFont && !$isDownloadSubsetSubtitleWithoutSeparateFont && !$isDownloadSubsetSubtitleWithSeparateFont) {
+	if ($sourcePolicy['AllowDownloadSubsetSubtitle']) {
+		$isDownloadSubsetSubtitleWithoutSeparateFont = true;
+	} else if ($sourcePolicy['AllowDownloadSubsetSubtitleWithSeparateFont']) {
+		$isDownloadSubsetSubtitleWithSeparateFont = true;
+	} else if ($sourcePolicy['AllowDownloadFontArchive']) {
+		$isDownloadFont = true;
+	} else {
+		dieJSON(-7, 'Disabled action');
+	}
+}
+
 $isDownloadSubsetSubtitle = ($isDownloadSubsetSubtitleWithoutSeparateFont || $isDownloadSubsetSubtitleWithSeparateFont);
 $isDownload = ($isDownloadFont || $isDownloadSubsetSubtitle);
 
@@ -86,6 +100,9 @@ switch ($fileExt) {
 			dieJSON(-12, 'Too many fonts');
 		}
 		$fontArr = GetFontByNameArr($sourcePolicy['MaxDownloadFontCount'], $subtitleFontnameArr);
+		if (count($fontArr) <= 0) {
+			dieJSON(-13, 'No font found');
+		}
 		if ($isDownload) {
 			$queueInfo = Queue();
 			if ($queueInfo[0] < 0) {
@@ -97,6 +114,19 @@ switch ($fileExt) {
 			ob_implicit_flush(true);
 			ob_end_clean();
 			header('X-Accel-Buffering: no');
+			$fontnameArr = array_unique(array_merge(array_column($fontArr, 'fontname'), array_column($fontArr, 'fontfullname'), array_column($fontArr, 'fontpsname')), SORT_REGULAR);
+			$diffFontnameArr = array_udiff($subtitleFontnameArr, $fontnameArr, 'strcasecmp');
+			$metaData = [
+				'total_count'   => count($subtitleFontnameArr),
+				'matched_count' => count($fontArr),
+				'missing_count' => count($diffFontnameArr),
+				'missing_fonts' => array_values($diffFontnameArr),
+				'matched_fonts' => array_column($fontArr, 'fontfile')
+			];
+			$metaBase64 = base64_encode(json_encode($metaData, JSON_UNESCAPED_UNICODE));
+			header("Access-Control-Expose-Headers: X-Font-Meta");
+			header("X-Font-Meta: {$metaBase64}");
+
 			if ($isDownloadFont) {
 				$archive = new ZipStream\ZipStream(
 					outputName: "[" . Title . "_Font] {$filename}.zip",
@@ -177,23 +207,6 @@ switch ($fileExt) {
 		if (count($fontArr) <= 0) {
 			dieJSON(-13, 'No font found');
 		}
-		if ($_GET['action'] === 'viewSubtitle') {
-			$t = time();
-			$sign = GenerateSign($source, $uid, $torrentID, $t, "{$filename}.{$fileExt}", sha1($_POST['file']));
-			$actionUrl = "download.php?source={$source}&uid={$uid}&torrent_id={$torrentID}&time={$t}&sign={$sign}&filename=" . rawurlencode("{$filename}.{$fileExt}");
-			echo <<<HTML
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Redirecting...</title></head>
-<body onload="document.getElementById('frm').submit();">
-<form id="frm" method="POST" action="{$actionUrl}">
-<input type="hidden" name="file" value="{$_POST['file']}">
-</form>
-</body>
-</html>
-HTML;
-			die();
-		}
 
 		$cacheFontInfoArr = [];
 		$maxCacheCount = SourcePolicy[$source]['MaxCacheFontCount'];
@@ -209,6 +222,18 @@ HTML;
 			ob_end_clean();
 			$currentFileType = ($isDownloadFont ? 'Font' : ($isDownloadSubsetSubtitleWithSeparateFont ? 'SubsetSubtitleWithSeparateFont' : 'SubsetSubtitle'));
 			header('X-Accel-Buffering: no');
+			$fontnameArr = array_unique(array_merge(array_column($fontArr, 'fontname'), array_column($fontArr, 'fontfullname'), array_column($fontArr, 'fontpsname')), SORT_REGULAR);
+			$diffFontnameArr = array_udiff($subtitleFontnameArr, $fontnameArr, 'strcasecmp');
+			$metaData = [
+				'total_count'   => count($subtitleFontnameArr),
+				'matched_count' => count($fontArr),
+				'missing_count' => count($diffFontnameArr),
+				'missing_fonts' => array_values($diffFontnameArr),
+				'matched_fonts' => array_column($fontArr, 'fontfile')
+			];
+			$metaBase64 = base64_encode(json_encode($metaData, JSON_UNESCAPED_UNICODE));
+			header("Access-Control-Expose-Headers: X-Font-Meta");
+			header("X-Font-Meta: {$metaBase64}");
 			$archive = new ZipStream\ZipStream(
 				outputName: "[" . Title . "_{$currentFileType}] {$filename}.zip",
 				sendHttpHeaders: true,
