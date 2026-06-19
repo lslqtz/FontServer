@@ -140,6 +140,7 @@ class OutlineComposite extends Outline {
     $font = $this->getFont();
 
     $gids = $font->getSubset();
+    $gidsFlipped = array_flip($gids);
 
     $size = $font->writeInt16(-1);
     $size += $font->writeFWord($this->xMin);
@@ -182,7 +183,7 @@ class OutlineComposite extends Outline {
 
       $size += $font->writeUInt16($flags);
 
-      $new_gid = array_search($_component->glyphIndex, $gids);
+      $new_gid = isset($gidsFlipped[$_component->glyphIndex]) ? $gidsFlipped[$_component->glyphIndex] : 0;
       $size += $font->writeUInt16($new_gid);
 
       if ($flags & self::ARG_1_AND_2_ARE_WORDS) {
