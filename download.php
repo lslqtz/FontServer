@@ -58,7 +58,7 @@ if (isset($_GET['font_id'])) {
 if (empty($_POST['file'])) {
 	dieHTML("坏参数!", 'Download');
 }
-if ((isset($_GET['upload_subtitle']) && $_GET['upload_subtitle'] == 1 && $fileExt !== 'ass') || !in_array($fileExt, ['ass', 'ssa', 'zip', 'rar', '7z'])) {
+if (!in_array($fileExt, ['ass', 'ssa', 'zip', 'rar', '7z'])) {
 	dieHTML("坏扩展名!", 'Download');
 }
 
