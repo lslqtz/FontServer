@@ -24,7 +24,7 @@ function dieJSON(int $code = -233, string $status = '') {
 if (!isset($_GET['action'], $_GET['filename'])) {
 	dieJSON(-1, ':(');
 }
-if ($_GET['action'] !== 'downloadSubsetSubtitle') {
+if (!in_array($_GET['action'], ['downloadSubsetSubtitle', 'viewSubtitle'])) {
 	dieJSON(-2, 'Bad action');
 }
 $loginPolicy = IsLogin();
@@ -88,6 +88,23 @@ switch ($fileExt) {
 		$fontArr = GetFontByNameArr($sourcePolicy['MaxDownloadFontCount'], $subtitleFontnameArr);
 		if (count($fontArr) <= 0) {
 			dieJSON(-13, 'No font found');
+		}
+		if ($_GET['action'] === 'viewSubtitle') {
+			$t = time();
+			$sign = GenerateSign($source, $uid, $torrentID, $t, "{$filename}.{$fileExt}", sha1($_POST['file']));
+			$actionUrl = "download.php?source={$source}&uid={$uid}&torrent_id={$torrentID}&time={$t}&sign={$sign}&filename=" . rawurlencode("{$filename}.{$fileExt}");
+			echo <<<HTML
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Redirecting...</title></head>
+<body onload="document.getElementById('frm').submit();">
+<form id="frm" method="POST" action="{$actionUrl}">
+<input type="hidden" name="file" value="{$_POST['file']}">
+</form>
+</body>
+</html>
+HTML;
+			die();
 		}
 		if ($isDownload) {
 			$queueInfo = Queue();
@@ -185,6 +202,23 @@ switch ($fileExt) {
 		$maxCacheCount = SourcePolicy[$source]['MaxCacheFontCount'];
 		if ($isDownload && $maxCacheCount > 0 && $sourcePolicy['ProcessFontForEverySubtitle']) {
 			$cacheFontInfoArr = BuildCacheFontInfoArr($subsetASSFontArr, $maxCacheCount);
+		}
+		if ($_GET['action'] === 'viewSubtitle') {
+			$t = time();
+			$sign = GenerateSign($source, $uid, $torrentID, $t, "{$filename}.{$fileExt}", sha1($_POST['file']));
+			$actionUrl = "download.php?source={$source}&uid={$uid}&torrent_id={$torrentID}&time={$t}&sign={$sign}&filename=" . rawurlencode("{$filename}.{$fileExt}");
+			echo <<<HTML
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Redirecting...</title></head>
+<body onload="document.getElementById('frm').submit();">
+<form id="frm" method="POST" action="{$actionUrl}">
+<input type="hidden" name="file" value="{$_POST['file']}">
+</form>
+</body>
+</html>
+HTML;
+			die();
 		}
 		if ($isDownload) {
 			$queueInfo = Queue();
