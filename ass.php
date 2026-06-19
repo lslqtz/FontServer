@@ -352,7 +352,14 @@ function BuildCacheFontInfoArr(array $subsetASSFontArr, int $maxCacheCount): arr
 			}
 		}
 	}
-	arsort($fontFileCounts);
+	uksort($fontFileCounts, function($fileA, $fileB) use ($fontFileCounts) {
+		$countA = $fontFileCounts[$fileA];
+		$countB = $fontFileCounts[$fileB];
+		if ($countA === $countB) {
+			return strcmp($fileA, $fileB); // 频率相同时, 按文件名稳定排序.
+		}
+		return $countB <=> $countA; // 否则按频率降序排列
+	});
 	$cachedCount = 0;
 	foreach ($fontFileCounts as $fontFile => $count) {
 		if ($count > 1 && $cachedCount < $maxCacheCount) {
