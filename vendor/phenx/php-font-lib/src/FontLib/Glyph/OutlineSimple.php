@@ -64,9 +64,10 @@ class OutlineSimple extends Outline {
     }
 
     $points = array();
+    $endPtsOfContoursFlipped = array_flip($endPtsOfContours);
     foreach ($flags as $i => $flag) {
       $points[$i]["onCurve"]      = $flag & self::ON_CURVE;
-      $points[$i]["endOfContour"] = in_array($i, $endPtsOfContours);
+      $points[$i]["endOfContour"] = isset($endPtsOfContoursFlipped[$i]);
     }
 
     // X Coords
