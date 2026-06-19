@@ -49,7 +49,9 @@ class glyf extends Table {
     foreach ($gids as $_gid) {
       $_glyph   = $this->getGlyph($_gid);
       if ($_glyph) {
-        $glyphIDs = array_merge($glyphIDs, $_glyph->getGlyphIDs());
+        foreach ($_glyph->getGlyphIDs() as $id) {
+          $glyphIDs[] = $id;
+        }
       }
     }
 
