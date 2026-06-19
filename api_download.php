@@ -220,7 +220,6 @@ switch ($fileExt) {
 				if (!$sourcePolicy['ProcessFontForEverySubtitle']) {
 					$uniqueChar = [];
 					foreach ($subsetASSFiles as $filename2 => &$arr) {
-						$arr[1] = ConvertEncode($arr[1]);
 						GetUniqueChar($arr[1], $uniqueChar);
 					}
 					$subsetFontASSContent = [];
@@ -249,7 +248,6 @@ switch ($fileExt) {
 				} else {
 					foreach ($subsetASSFiles as $filename2 => &$arr) {
 						$subsetFontASSContent = [];
-						$arr[1] = ConvertEncode($arr[1]);
 						AutoProcessFontArr($source, $uid, $torrentID, $subsetASSFontArr[$filename2], $arr[1], $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont, $cacheFontInfoArr);
 						if ($isDownloadSubsetSubtitleWithSeparateFont) {
 							foreach ($subsetFontASSContent as $fontfilename2 => &$fontContent2) {
