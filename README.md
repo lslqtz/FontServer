@@ -27,6 +27,19 @@
 
 通过 Scraper, 可以将字体信息抓取至数据库 (可能有内存泄漏). 字体服务器支持配置多个字体路径, 从前至后尝试, 因此字体可同时存储在多个路径或磁盘.
 
+Deps:
+- nginx
+- php & php-fpm (Ver >= 8.2)
+- mariadb
+- p7zip-full
+- php-zip
+- php-json
+- php-zlib
+- php-iconv
+- php-fileinfo
+- php-mbstring
+- php-pdo_mysql
+
 Nginx config:
 ```
 server {
