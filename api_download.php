@@ -52,24 +52,6 @@ if (!in_array($fileExt, ['ass', 'ssa', 'zip', 'rar', '7z'])) {
 	dieJSON(-6, 'Bad file ext');
 }
 
-if ($_GET['action'] === 'viewSubtitle') {
-	$t = time();
-	$sign = GenerateSign($source, $uid, $torrentID, $t, "{$filename}.{$fileExt}", sha1($_POST['file']));
-	$actionUrl = "download.php?source={$source}&uid={$uid}&torrent_id={$torrentID}&time={$t}&sign={$sign}&filename=" . rawurlencode("{$filename}.{$fileExt}");
-	echo <<<HTML
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Redirecting...</title></head>
-<body onload="document.getElementById('frm').submit();">
-<form id="frm" method="POST" action="{$actionUrl}">
-<input type="hidden" name="file" value="{$_POST['file']}">
-</form>
-</body>
-</html>
-HTML;
-	die();
-}
-
 $isDownloadReq = true;
 $isDownloadFont = false;
 if ($isDownloadFont && !$sourcePolicy['AllowDownloadFontArchive']) {
@@ -194,6 +176,23 @@ switch ($fileExt) {
 		$fontArr = array_unique(array_merge($fontArr, ...array_values($subsetASSFontArr)), SORT_REGULAR);
 		if (count($fontArr) <= 0) {
 			dieJSON(-13, 'No font found');
+		}
+		if ($_GET['action'] === 'viewSubtitle') {
+			$t = time();
+			$sign = GenerateSign($source, $uid, $torrentID, $t, "{$filename}.{$fileExt}", sha1($_POST['file']));
+			$actionUrl = "download.php?source={$source}&uid={$uid}&torrent_id={$torrentID}&time={$t}&sign={$sign}&filename=" . rawurlencode("{$filename}.{$fileExt}");
+			echo <<<HTML
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>Redirecting...</title></head>
+<body onload="document.getElementById('frm').submit();">
+<form id="frm" method="POST" action="{$actionUrl}">
+<input type="hidden" name="file" value="{$_POST['file']}">
+</form>
+</body>
+</html>
+HTML;
+			die();
 		}
 
 		$cacheFontInfoArr = [];
