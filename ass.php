@@ -278,4 +278,88 @@ function ParseSubtitleFont(string $buffer, array &$fontnameArr, string &$current
 	}
 	return 0;
 }
+function ParseSubtitleContent(string $content, int $maxFontCount, bool $isSubset): array {
+	$fontnameArr = [];
+	$currentType = '';
+	$fontIndex = 1;
+	$foundFontIndex = false;
+	$matchedTypes = [];
+	$subsetASSContent = $isSubset ? '' : null;
+	foreach (explode("\n", ConvertEncode($content)) as $line) {
+		if (count($fontnameArr) > $maxFontCount) {
+			break;
+		}
+		ParseSubtitleFont($line, $fontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
+	}
+	return [$fontnameArr, $subsetASSContent];
+}
+function ParseArchiveSubtitles(\Kiwilan\Archive\Archive $subtitleArchive, int $maxDownloadFontCount, bool $isDownloadSubsetSubtitle): array {
+	$subsetASSFiles = [];
+	$subtitleFontnameArr = [];
+	foreach ($subtitleArchive->getFileItems() as $subtitleArchiveFile) {
+		if (count($subtitleFontnameArr) > $maxDownloadFontCount) {
+			break;
+		}
+		$subtitleFilePath = $subtitleArchiveFile->getPath();
+		if (stripos($subtitleFilePath, '__MACOSX') !== false) {
+			continue;
+		}
+		$fileInfo2 = pathinfo($subtitleFilePath);
+		$filename2 = $fileInfo2['filename'];
+		if ($filename2[0] === '.' || !isset($fileInfo2['extension'])) {
+			continue;
+		}
+		$subtitleExt = $fileInfo2['extension'];
+		if ($subtitleExt !== 'ass' && $subtitleExt !== 'ssa') {
+			continue;
+		}
+		try {
+			$subtitleContent = $subtitleArchive->getContents($subtitleArchiveFile);
+		} catch (Throwable $e) {
+			$subtitleContent = null;
+		}
+		if (empty($subtitleContent)) {
+			continue;
+		}
+		list($tmpSubtitleFontnameArr, $subsetASSContent) = ParseSubtitleContent($subtitleContent, $maxDownloadFontCount, $isDownloadSubsetSubtitle);
+
+		if (count($tmpSubtitleFontnameArr) > $maxDownloadFontCount) {
+			$subtitleFontnameArr = $tmpSubtitleFontnameArr;
+			break;
+		}
+
+		$subtitleFontnameArr = array_unique(array_merge($subtitleFontnameArr, $tmpSubtitleFontnameArr), SORT_REGULAR);
+		if (count($subtitleFontnameArr) > $maxDownloadFontCount) {
+			break;
+		}
+		$subsetASSFiles[$subtitleFilePath] = [$tmpSubtitleFontnameArr, $subsetASSContent];
+	}
+	return [$subsetASSFiles, $subtitleFontnameArr];
+}
+function BuildCacheFontInfoArr(array $subsetASSFontArr, int $maxCacheCount): array {
+	$cacheFontInfoArr = [];
+	$fontFileCounts = [];
+	foreach ($subsetASSFontArr as $fonts) {
+		$seenInThisSubtitle = [];
+		foreach ($fonts as $font) {
+			$fontFile = $font['fontfile'];
+			if (!in_array($fontFile, $seenInThisSubtitle)) {
+				$seenInThisSubtitle[] = $fontFile;
+				if (!isset($fontFileCounts[$fontFile])) {
+					$fontFileCounts[$fontFile] = 0;
+				}
+				$fontFileCounts[$fontFile]++;
+			}
+		}
+	}
+	arsort($fontFileCounts);
+	$cachedCount = 0;
+	foreach ($fontFileCounts as $fontFile => $count) {
+		if ($count > 1 && $cachedCount < $maxCacheCount) {
+			$cacheFontInfoArr[$fontFile] = null;
+			$cachedCount++;
+		}
+	}
+	return $cacheFontInfoArr;
+}
 ?>

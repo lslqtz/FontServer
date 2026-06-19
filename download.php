@@ -96,18 +96,7 @@ if ((strlen($decodedUploadFile) / 1024 / 1024) > $sourcePolicy['MaxSubtitleFiles
 switch ($fileExt) {
 	case 'ass':
 	case 'ssa':
-		$currentType = '';
-		$fontIndex = 1;
-		$foundFontIndex = false;
-		$matchedTypes = [];
-		$subsetASSContent = ($isDownloadSubsetSubtitle ? '' : null);
-		$uploadFileContentArr = explode("\n", ConvertEncode($decodedUploadFile));
-		foreach ($uploadFileContentArr as $uploadFileLine) {
-			if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
-				break;
-			}
-			ParseSubtitleFont($uploadFileLine, $subtitleFontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
-		}
+		list($subtitleFontnameArr, $subsetASSContent) = ParseSubtitleContent($decodedUploadFile, $sourcePolicy['MaxDownloadFontCount'], $isDownloadSubsetSubtitle);
 		if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 			dieHTML("太多的字体!", 'Download');
 		}
@@ -188,57 +177,12 @@ switch ($fileExt) {
 			dieHTML("读取字幕压缩包时发生错误!", 'Download');
 		}
 		unset($decodedUploadFile);
-		$subsetASSFiles = [];
 		$subtitleArchiveFiles = $subtitleArchive->getFileItems();
 		if (count($subtitleArchiveFiles) > $sourcePolicy['MaxSubtitleFileCount']) {
 			dieHTML("太多的字幕!", 'Download');
 		}
-		foreach ($subtitleArchiveFiles as $subtitleArchiveFile) {
-			if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
-				break;
-			}
-			$currentType = '';
-			$fontIndex = 1;
-			$foundFontIndex = false;
-			$matchedTypes = [];
-			$subsetASSContent = ($isDownloadSubsetSubtitle ? '' : null);
-			$tmpSubtitleFontnameArr = [];
-			$subtitleFilePath = $subtitleArchiveFile->getPath();
-			if (stripos($subtitleFilePath, '__MACOSX') !== false) {
-				continue;
-			}
-			$fileInfo2 = pathinfo($subtitleFilePath);
-			$filename2 = $fileInfo2['filename'];
-			if ($filename2[0] === '.' || !isset($fileInfo2['extension'])) {
-				continue;
-			}
-			$subtitleExt = $fileInfo2['extension'];
-			if ($subtitleExt !== 'ass' && $subtitleExt !== 'ssa') {
-				continue;
-			}
-			try {
-				$subtitleContent = $subtitleArchive->getContents($subtitleArchiveFile);
-			} catch (Throwable $e) {
-				$subtitleContent = null;
-			}
-			if (empty($subtitleContent)) {
-				continue;
-			}
-			$subtitleContentArr = explode("\n", ConvertEncode($subtitleContent));
-			foreach ($subtitleContentArr as $subtitleContentLine) {
-				if (count($tmpSubtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
-					$subtitleFontnameArr = $tmpSubtitleFontnameArr;
-					break 2;
-				}
-				ParseSubtitleFont($subtitleContentLine, $tmpSubtitleFontnameArr, $currentType, $fontIndex, $foundFontIndex, $matchedTypes, $subsetASSContent);
-			}
-			$subtitleFontnameArr = array_unique(array_merge($subtitleFontnameArr, $tmpSubtitleFontnameArr), SORT_REGULAR);
-			if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
-				break;
-			}
-			$subsetASSFiles[$subtitleFilePath] = [$tmpSubtitleFontnameArr, $subsetASSContent];
-		}
-		unset($subtitleArchive, $subtitleArchiveFiles, $subsetASSContent, $subtitleContent, $subtitleContentArr, $tmpSubtitleFontnameArr);
+		list($subsetASSFiles, $subtitleFontnameArr) = ParseArchiveSubtitles($subtitleArchive, $sourcePolicy['MaxDownloadFontCount'], $isDownloadSubsetSubtitle);
+		unset($subtitleArchive, $subtitleArchiveFiles);
 		if (count($subtitleFontnameArr) > $sourcePolicy['MaxDownloadFontCount']) {
 			dieHTML("太多的字体!", 'Download');
 		}
@@ -262,28 +206,7 @@ switch ($fileExt) {
 		$cacheFontInfoArr = [];
 		$maxCacheCount = SourcePolicy[$source]['MaxCacheFontCount'];
 		if ($isDownload && $maxCacheCount > 0 && $sourcePolicy['ProcessFontForEverySubtitle']) {
-			$fontFileCounts = [];
-			foreach ($subsetASSFontArr as $filename2 => $fonts) {
-				$seenInThisSubtitle = [];
-				foreach ($fonts as $font) {
-					$fontFile = $font['fontfile'];
-					if (!in_array($fontFile, $seenInThisSubtitle)) {
-						$seenInThisSubtitle[] = $fontFile;
-						if (!isset($fontFileCounts[$fontFile])) {
-							$fontFileCounts[$fontFile] = 0;
-						}
-						$fontFileCounts[$fontFile]++;
-					}
-				}
-			}
-			arsort($fontFileCounts);
-			$cachedCount = 0;
-			foreach ($fontFileCounts as $fontFile => $count) {
-				if ($count > 1 && $cachedCount < $maxCacheCount) {
-					$cacheFontInfoArr[$fontFile] = null;
-					$cachedCount++;
-				}
-			}
+			$cacheFontInfoArr = BuildCacheFontInfoArr($subsetASSFontArr, $maxCacheCount);
 		}
 		if ($isDownload) {
 			$queueInfo = Queue();
