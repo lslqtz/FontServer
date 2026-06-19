@@ -293,7 +293,7 @@ function ParseSubtitleContent(string $content, int $maxFontCount, bool $isSubset
 	}
 	return [$fontnameArr, $subsetASSContent];
 }
-function ParseArchiveSubtitles(\Kiwilan\Archive\Archive $subtitleArchive, int $maxDownloadFontCount, bool $isDownloadSubsetSubtitle): array {
+function ParseArchiveSubtitles(\Kiwilan\Archive\Readers\BaseArchive $subtitleArchive, int $maxDownloadFontCount, bool $isDownloadSubsetSubtitle): array {
 	$subsetASSFiles = [];
 	$subtitleFontnameArr = [];
 	foreach ($subtitleArchive->getFileItems() as $subtitleArchiveFile) {
