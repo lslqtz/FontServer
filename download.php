@@ -243,7 +243,6 @@ switch ($fileExt) {
 					$uniqueChar = [];
 					// 预处理, 得到字幕所有字符的并集.
 					foreach ($subsetASSFiles as $filename2 => &$arr) {
-						$arr[1] = ConvertEncode($arr[1]);
 						GetUniqueChar($arr[1], $uniqueChar);
 					}
 					// 准备好所需的子集化字幕用附加字体信息.
@@ -275,7 +274,6 @@ switch ($fileExt) {
 					// 边输出边为每个字幕处理子集化.
 					foreach ($subsetASSFiles as $filename2 => &$arr) {
 						$subsetFontASSContent = [];
-						$arr[1] = ConvertEncode($arr[1]);
 						AutoProcessFontArr($source, $uid, $torrentID, $subsetASSFontArr[$filename2], $arr[1], $subsetFontASSContent, $isDownloadSubsetSubtitleWithSeparateFont, $cacheFontInfoArr);
 						if ($isDownloadSubsetSubtitleWithSeparateFont) {
 							// 仅 Subset Font 模式下, subsetFontASSContent 实际被当作 subsetFontContent 使用.

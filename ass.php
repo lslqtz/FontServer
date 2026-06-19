@@ -37,13 +37,21 @@ function ConvertEncode(string $text) {
 	}
 
 	if ($encodeType === '') {
-		return mb_convert_encoding($text, 'UTF-8', ['UTF-8', 'ASCII', 'GB18030', 'BIG-5', 'SJIS', 'EUC-JP']);
+		$detected = mb_detect_encoding($text, ['UTF-8', 'ASCII', 'GB18030', 'BIG-5', 'SJIS', 'EUC-JP'], true);
+		if ($detected === false) {
+			$detected = 'UTF-8';
+		}
+		return mb_convert_encoding($text, 'UTF-8', $detected);
 	}
 
 	return mb_convert_encoding($text, 'UTF-8', $encodeType);
 }
 function GetUniqueChar(string &$subsetASSContent, array &$uniqueChar) {
-	$uniqueChar = array_unique(array_merge($uniqueChar, preg_split('//u', $subsetASSContent, -1, PREG_SPLIT_NO_EMPTY)), SORT_REGULAR);
+	if (preg_match_all('/./us', $subsetASSContent, $matches)) {
+		foreach ($matches[0] as $c) {
+			$uniqueChar[$c] = $c;
+		}
+	}
 }
 function GetFontname(string $fontfile) {
 	return pathinfo($fontfile, PATHINFO_FILENAME);
