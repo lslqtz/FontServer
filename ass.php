@@ -20,7 +20,7 @@ function GenerateRandomString($length) {
 function ConvertEncode(string $text) {
 	$first2 = substr($text, 0, 2);
 	$first3 = substr($text, 0, 3);
-	$first4 = substr($text, 0, 3);
+	$first4 = substr($text, 0, 4);
 
 	$encodeType = '';
 	if ($first3 === UTF8_BOM) {
