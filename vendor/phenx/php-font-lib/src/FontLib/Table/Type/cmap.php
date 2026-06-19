@@ -249,10 +249,10 @@ class cmap extends Table {
     $glyphIndexArray = $font->getUnicodeCharMap();
 
     $newGlyphIndexArray = array();
+    $subsetFlipped = array_flip($subset);
     foreach ($glyphIndexArray as $code => $gid) {
-      $new_gid = array_search($gid, $subset);
-      if ($new_gid !== false) {
-        $newGlyphIndexArray[$code] = $new_gid;
+      if (isset($subsetFlipped[$gid])) {
+        $newGlyphIndexArray[$code] = $subsetFlipped[$gid];
       }
     }
 
