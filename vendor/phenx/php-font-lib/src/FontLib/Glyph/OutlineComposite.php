@@ -40,7 +40,7 @@ class OutlineComposite extends Outline {
     foreach ($this->components as $_component) {
       $glyphIDs[] = $_component->glyphIndex;
 
-      $_glyph   = $this->table->data[$_component->glyphIndex];
+      $_glyph   = $this->table->getGlyph($_component->glyphIndex);
 
       if ($_glyph !== $this) {
         $glyphIDs = array_merge($glyphIDs, $_glyph->getGlyphIDs());

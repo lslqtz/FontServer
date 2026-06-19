@@ -19,30 +19,38 @@ use FontLib\Glyph\OutlineSimple;
  * @property Outline[] $data
  */
 class glyf extends Table {
+  protected $locaOffsets = null;
+  protected $glyphOffset = 0;
+
+  public function getGlyph($gid) {
+    if (array_key_exists($gid, $this->data)) {
+      return $this->data[$gid];
+    }
+    if ($this->locaOffsets === null || !isset($this->locaOffsets[$gid + 1])) {
+      return null;
+    }
+    $_offset = $this->glyphOffset + $this->locaOffsets[$gid];
+    $_size   = $this->locaOffsets[$gid + 1] - $this->locaOffsets[$gid];
+    $this->data[$gid] = Outline::init($this, $_offset, $_size, $this->getFont());
+    return $this->data[$gid];
+  }
+
   protected function _parse() {
     $font   = $this->getFont();
-    $offset = $font->pos();
+    $this->glyphOffset = $font->pos();
 
-    $loca      = $font->getData("loca");
-    $real_loca = array_slice($loca, 0, -1); // Not the last dummy loca entry
-
-    $data = array();
-
-    foreach ($real_loca as $gid => $location) {
-      $_offset    = $offset + $loca[$gid];
-      $_size      = $loca[$gid + 1] - $loca[$gid];
-      $data[$gid] = Outline::init($this, $_offset, $_size, $font);
-    }
-
-    $this->data = $data;
+    $this->locaOffsets = $font->getData("loca");
+    $this->data = array();
   }
 
   public function getGlyphIDs($gids = array()) {
     $glyphIDs = array();
 
     foreach ($gids as $_gid) {
-      $_glyph   = $this->data[$_gid];
-      $glyphIDs = array_merge($glyphIDs, $_glyph->getGlyphIDs());
+      $_glyph   = $this->getGlyph($_gid);
+      if ($_glyph) {
+        $glyphIDs = array_merge($glyphIDs, $_glyph->getGlyphIDs());
+      }
     }
 
     return array_unique(array_merge($gids, $glyphIDs));
@@ -74,7 +82,8 @@ class glyf extends Table {
       $height = round($height / $ratio);
     }
 
-    $s = "<h3>" . "Only the first $n simple glyphs are shown (" . count($this->data) . " total)
+    $total = $this->locaOffsets ? (count($this->locaOffsets) - 1) : count($this->data);
+    $s = "<h3>" . "Only the first $n simple glyphs are shown (" . $total . " total)
     <div class='glyph-view simple'>Simple glyph</div>
     <div class='glyph-view composite'>Composite glyph</div>
     Zoom: <input type='range' value='100' max='400' onchange='Glyph.resize(this.value)' />
@@ -88,7 +97,12 @@ class glyf extends Table {
       Glyph.height = $height;
     </script>";
 
-    foreach ($this->data as $g => $glyph) {
+    for ($g = 0; $g < $total; $g++) {
+      $glyph = $this->getGlyph($g);
+      if (!$glyph) {
+        continue;
+      }
+
       if ($n-- <= 0) {
         break;
       }
@@ -139,7 +153,6 @@ class glyf extends Table {
   protected function _encode() {
     $font   = $this->getFont();
     $subset = $font->getSubset();
-    $data   = $this->data;
 
     $loca = array();
 
@@ -147,7 +160,8 @@ class glyf extends Table {
     foreach ($subset as $gid) {
       $loca[] = $length;
 
-      $bytes = $data[$gid]->encode();
+      $_glyph = $this->getGlyph($gid);
+      $bytes = $_glyph ? $_glyph->encode() : 0;
 
       $pad = 0;
       $mod = $bytes % 4;
