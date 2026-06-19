@@ -4,52 +4,37 @@ function UUEncode_ASS($filename, $newLine = true): string {
 	if ($filesize <= 0) {
 		return '';
 	}
-	$retStr = '';
-	$written = 0;
-	$fileContent = file_get_contents($filename);
-	for ($pos = 0; $pos < $filesize; $pos += 3) {
-		$chunkSize = ($filesize - $pos);
-		$src = [ord($fileContent[$pos]), ($chunkSize > 1 ? ord($fileContent[$pos+1]) : 0), ($chunkSize > 2 ? ord($fileContent[$pos+2]) : 0)];
-		$dst = [($src[0] >> 2), ((($src[0] & 0x3) << 4) | (($src[1] & 0xF0) >> 4)), ((($src[1] & 0xF) << 2) | (($src[2] & 0xC0) >> 6)), ($src[2] & 0x3F)];
-		for ($i = 0; $i <= min(3, $chunkSize); ++$i) {
-			$retStr .= chr($dst[$i] + 33);
-			if ($newLine && ++$written == 80 && $pos + 3 < $filesize) {
-				$written = 0;
-				$retStr .= "\n";
-			}
-		}
+	static $b64Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+	static $assAlphabet = null;
+	if ($assAlphabet === null) {
+		$assAlphabet = '';
+		for ($i = 0; $i < 64; $i++) $assAlphabet .= chr($i + 33);
 	}
+	$fileContent = file_get_contents($filename);
+	$b64 = base64_encode($fileContent);
 	unset($fileContent);
-	return $retStr;
+	$b64 = str_replace('=', '', $b64);
+	$mapped = strtr($b64, $b64Alphabet, $assAlphabet);
+	if ($newLine) {
+		return wordwrap($mapped, 80, "\n", true);
+	}
+	return $mapped;
 }
 function UUDecode_ASS($filename): string {
 	$filesize = filesize($filename);
 	if ($filesize <= 0) {
 		return '';
 	}
-	$retStr = '';
-	$fileContent = file_get_contents($filename);
-	for ($pos = 0; $pos < $filesize;) {
-		$byte = 0;
-		$src = [0, 0, 0, 0];
-		for ($i = 0; ($i <= 3 && $pos < $filesize); $pos++) {
-			$char = $fileContent[$pos];
-			if ($char !== "\n" && $char !== "\r") {
-				$src[$i++] = (ord($char) - 33);
-				++$byte;
-			}
-		}
-		if ($byte > 1) {
-			$retStr .= chr(($src[0] << 2) | ($src[1] >> 4));
-		}
-		if ($byte > 2) {
-			$retStr .= chr((($src[1] & 0xF) << 4) | ($src[2] >> 2));
-		}
-		if ($byte > 3) {
-			$retStr .= chr((($src[2] & 0x3) << 6) | ($src[3]));
-		}
+	static $b64Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+	static $assAlphabet = null;
+	if ($assAlphabet === null) {
+		$assAlphabet = '';
+		for ($i = 0; $i < 64; $i++) $assAlphabet .= chr($i + 33);
 	}
+	$fileContent = file_get_contents($filename);
+	$fileContent = str_replace(["\n", "\r"], '', $fileContent);
+	$mapped = strtr($fileContent, $assAlphabet, $b64Alphabet);
 	unset($fileContent);
-	return $retStr;
+	return base64_decode($mapped);
 }
 ?>

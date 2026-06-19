@@ -62,9 +62,9 @@ function ReplaceFontArr(array &$mapFontnameArr, string &$subsetASSContent, array
 		uksort($mapFontnameArr, function ($a, $b) {
 			return (strlen($b) - strlen($a));
 		});
-		foreach ($mapFontnameArr as $mapFontname => &$fontname) {
-			$subsetASSContent = str_ireplace($mapFontname, $fontname, $subsetASSContent);
-		}
+		$search = array_keys($mapFontnameArr);
+		$replace = array_values($mapFontnameArr);
+		$subsetASSContent = str_ireplace($search, $replace, $subsetASSContent);
 		if (!$subsetFontOnly) {
 			$subsetASSContent .= "\n[Fonts]\n";
 			foreach ($subsetFontASSContent as $mapFontfile => &$fontASSContent) {
