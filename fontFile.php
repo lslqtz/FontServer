@@ -110,7 +110,7 @@ function AddFontFile(string $fontPath, bool $localScraper = false): array {
 		if ($retcode > 0) {
 			return [-1, "转换 otf 失败: {$fontPath}", $additionalMsgList];
 		}
-		return [-1, "转换 otf 成功: {$fontPath}", $additionalMsgList];
+		$additionalMsgList[] = [0, "转换 otf 成功: {$fontPath}", $additionalMsgList];
 		//unlink($fontPath);
 		$fontExt = 'ttf';
 		$fontPath = ($fontFileInfo['dirname'] . '/' . $fontFileInfo['filename'] . ".ttf");
