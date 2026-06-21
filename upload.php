@@ -4,7 +4,7 @@ require_once('user.php');
 require_once('fontFile.php');
 
 $loginPolicy = IsLogin();
-if ($loginPolicy === null || $loginPolicy[0] === 'Public') {
+if ($loginPolicy === null || ($loginPolicy[0] === 'Public' && $loginPolicy[1] === SourcePolicy['Public']['PublicUID'])) {
 	RedirectLogin();
 }
 
@@ -25,6 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['fontfile'])) {
 		$status = $isAdmin ? 'approved' : 'pending';
 		
 		list($errCode, $errMsg, $additionalMsgList) = AddFontFile($newTmpName, false, $userID, $status, $safeName);
+		if (is_file($newTmpName)) {
+			@unlink($newTmpName);
+		}
 		
 		HTMLStart('贡献字体', GetUserBar($loginPolicy[0], $loginPolicy[1], $loginPolicy[2]['AllowLogout']));
 		if ($errCode === 0) {
@@ -48,7 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['fontfile'])) {
 HTMLStart('贡献字体', GetUserBar($loginPolicy[0], $loginPolicy[1], $loginPolicy[2]['AllowLogout']));
 echo <<<html
 	<div class="upload">
-		<h2>贡献字体</h2>
 		<form role="form" method="POST" enctype="multipart/form-data">
 			<label for="fontfile">选择字体文件 (.ttf, .ttc, .otf):</label><br>
 			<input type="file" id="fontfile" name="fontfile" accept=".ttf,.ttc,.otf" required />

@@ -4,7 +4,7 @@ require_once('user.php');
 require_once('mysql.php');
 
 $loginPolicy = IsLogin();
-if ($loginPolicy === null || $loginPolicy[0] === 'Public') {
+if ($loginPolicy === null || ($loginPolicy[0] === 'Public' && $loginPolicy[1] === SourcePolicy['Public']['PublicUID'])) {
 	RedirectLogin();
 }
 
@@ -32,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'], $_POST['tar
 }
 
 HTMLStart('用户管理', GetUserBar($loginPolicy[0], $loginPolicy[1], $loginPolicy[2]['AllowLogout']));
-echo "<h2>用户管理</h2>";
 
 if (ConnectDB()) {
 	$stmt = $db->query("SELECT `id`, `username`, `email`, `role`, `status`, `created_at` FROM `users` ORDER BY `id` ASC");

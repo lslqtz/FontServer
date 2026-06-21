@@ -20,7 +20,10 @@ function IsLogin(): ?array {
 }
 function GetUserBar(string $source, int $userID, bool $allowLogout = false): string {
 	$role = GetUserRole($userID);
-	$links = "&nbsp;<a href=\"upload.php\">贡献字体</a>";
+	$links = "";
+	if ($source !== 'Public' || $userID !== SourcePolicy['Public']['PublicUID']) {
+		$links .= "&nbsp;<a href=\"upload.php\">贡献字体</a>";
+	}
 	if ($role === 'admin') {
 		$links .= "&nbsp;|&nbsp;<a href=\"admin_users.php\">用户管理</a>";
 		$links .= "&nbsp;|&nbsp;<a href=\"admin_fonts.php\">字体审核</a>";
