@@ -3,11 +3,61 @@ require_once('config.php');
 require_once('mysql.php');
 require_once('mail.php');
 
+function GetUserApprovedFontCount(int $userID): int {
+	global $db;
+	if (!ConnectDB()) {
+		return 0;
+	}
+	$stmt = $db->prepare("SELECT COUNT(*) FROM `fonts_meta` WHERE `uploader` = ? AND `status` = 'approved'");
+	try {
+		if ($stmt->execute([$userID])) {
+			$count = intval($stmt->fetchColumn(0));
+			$stmt->closeCursor();
+			return $count;
+		}
+	} catch (Throwable $e) {}
+	return 0;
+}
+
+function GetUserContributorLevel(int $userID): int {
+	$count = GetUserApprovedFontCount($userID);
+	$levels = defined('ContributorLevels') ? ContributorLevels : [1, 2, 4, 8, 16, 32, 64, 128, 256, 512];
+	$level = 0;
+	for ($i = 0; $i < 10; $i++) {
+		if ($count >= $levels[$i]) {
+			$level = $i + 1;
+		} else {
+			break;
+		}
+	}
+	return $level;
+}
+
+function GetSourcePolicy(string $source, int $uid): array {
+	if (!isset(SourcePolicy[$source])) {
+		return [];
+	}
+	$policy = SourcePolicy[$source];
+	if ($source === 'Public' && $uid !== SourcePolicy['Public']['PublicUID']) {
+		$level = GetUserContributorLevel($uid);
+		for ($l = $level; $l >= 1; $l--) {
+			if (isset(SourcePolicy["Contributor_{$l}"])) {
+				$policy = SourcePolicy["Contributor_{$l}"];
+				break;
+			}
+		}
+	}
+	return $policy;
+}
+
 function IsLogin(): ?array {
 	// Return loginPolicy.
 	if (isset($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')]) && CheckLoginBySign($_COOKIE[(CookieName . '_' . 'Source')], $_COOKIE[(CookieName . '_' . 'UID')], $_COOKIE[(CookieName . '_' . 'Time')], $_COOKIE[(CookieName . '_' . 'Sign')])) {
-		if (SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]['AllowLogin']) {
-			return [$_COOKIE[(CookieName . '_' . 'Source')], intval($_COOKIE[(CookieName . '_' . 'UID')]), SourcePolicy[$_COOKIE[(CookieName . '_' . 'Source')]]];
+		$source = $_COOKIE[(CookieName . '_' . 'Source')];
+		$uid = intval($_COOKIE[(CookieName . '_' . 'UID')]);
+		$policy = GetSourcePolicy($source, $uid);
+		if (!empty($policy) && $policy['AllowLogin']) {
+			return [$source, $uid, $policy];
 		}
 	}
 	if (SourcePolicy['Public']['PublicUID'] > 0) {
@@ -33,7 +83,14 @@ function GetUserBar(string $source, int $userID, bool $allowLogout = false): str
 	}
 	if ($source === 'Public') {
 		if (($username = GetUsernameByID($userID)) !== null) {
-			return "你好, {$username} (UID: {$userID}){$links}";
+			$levelStr = "";
+			if ($userID !== SourcePolicy['Public']['PublicUID']) {
+				$level = GetUserContributorLevel($userID);
+				if ($level > 0) {
+					$levelStr = ", Level {$level} 贡献者";
+				}
+			}
+			return "你好, {$username} (UID: {$userID}{$levelStr}){$links}";
 		}
 	}
 	return "你好, {$source} 用户 (UID: {$userID}){$links}";

@@ -209,7 +209,7 @@ switch ($fileExt) {
 		}
 
 		$cacheFontInfoArr = [];
-		$maxCacheCount = SourcePolicy[$source]['MaxCacheFontCount'];
+		$maxCacheCount = $sourcePolicy['MaxCacheFontCount'];
 		if ($isDownload && $maxCacheCount > 0 && $sourcePolicy['ProcessFontForEverySubtitle']) {
 			$cacheFontInfoArr = BuildCacheFontInfoArr($subsetASSFontArr, $maxCacheCount);
 		}

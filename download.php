@@ -15,11 +15,14 @@ function dieWithQueue(string $status = '') {
 if (!isset($_GET['source'], $_GET['uid'], $_GET['torrent_id'], $_GET['time'], $_GET['sign'], $_GET['filename'])) {
 	dieHTML(":(", 'Download');
 }
-if (!isset(SourcePolicy[$_GET['source']])) {
-	dieHTML("坏来源!", 'Download');
-}
 if (!is_numeric($_GET['uid']) || !is_numeric($_GET['torrent_id']) || !is_numeric($_GET['time'])) {
 	dieHTML("坏参数!", 'Download');
+}
+$source = $_GET['source'];
+$uid = intval($_GET['uid']);
+$sourcePolicy = GetSourcePolicy($source, $uid);
+if (empty($sourcePolicy)) {
+	dieHTML("坏来源!", 'Download');
 }
 $fileInfo = pathinfo($_GET['filename']);
 $filename = $fileInfo['filename'];
@@ -27,12 +30,9 @@ if (empty($filename)) {
 	dieHTML("坏文件名!", 'Download');
 }
 $fileExt = $fileInfo['extension'];
-$source = $_GET['source'];
-$uid = intval($_GET['uid']);
 $torrentID = intval($_GET['torrent_id']);
 $timestamp = intval($_GET['time']);
 $rawSign = $_GET['sign'];
-$sourcePolicy = SourcePolicy[$source];
 if (isset($_GET['font_id'])) {
 	if (!is_numeric($_GET['font_id'])) {
 		dieHTML("坏参数!", 'Download');
@@ -204,7 +204,7 @@ switch ($fileExt) {
 
 		// 计算每个字体的出现频次，选出排名前 MaxCacheFontCount 且出现多于 1 次的字体进行预先缓存标记
 		$cacheFontInfoArr = [];
-		$maxCacheCount = SourcePolicy[$source]['MaxCacheFontCount'];
+		$maxCacheCount = $sourcePolicy['MaxCacheFontCount'];
 		if ($isDownload && $maxCacheCount > 0 && $sourcePolicy['ProcessFontForEverySubtitle']) {
 			$cacheFontInfoArr = BuildCacheFontInfoArr($subsetASSFontArr, $maxCacheCount);
 		}
