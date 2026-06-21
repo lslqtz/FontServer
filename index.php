@@ -22,7 +22,7 @@ if ($allowLogin) {
 	}
 }
 HTMLOutput("<p>{$tmpOut}</p>");
-HTMLOutput("<p>开放登录当前" . ($allowLogin ? '启用' : '禁用') . ", 开放注册当前" . ($allowRegister ? (SourcePolicy['Public']['EmailExpireTime'] > 0 ? '启用' : '启用 (需要审批)') : '禁用') . ".</p>");
+HTMLOutput("<p>开放登录当前" . ($allowLogin ? '启用' : '禁用') . ", 开放注册当前" . ($allowRegister ? (SourcePolicy['Public']['EmailExpireTime'] == 0 || !empty(SourcePolicy['Public']['RequireAdminApproval']) ? '启用 (需要审批)' : '启用') : '禁用') . ".</p>");
 $tmpOut = "当前, 你可以在 "  . Title . " 上";
 $matched = false;
 if ($loginPolicy[2]['AllowDownloadFont']) {

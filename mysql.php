@@ -38,6 +38,7 @@ function Install() {
 		`username` varchar(123) NOT NULL,
 		`email` varchar(123) NOT NULL,
 		`password` varchar(123) NOT NULL,
+		`role` enum('user','admin') DEFAULT 'user',
 		`status` tinyint(1) DEFAULT 0,
 		`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		`updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -62,9 +63,23 @@ function Install() {
 		`uploader` int DEFAULT NULL,
 		`fontfile` varchar(255) DEFAULT NULL,
 		`fontsize` bigint DEFAULT NULL,
+		`status` enum('pending','approved','rejected') DEFAULT 'pending',
 		`created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (`id`),
 		UNIQUE KEY `index_unique` (`fontfile`)
 	) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci");
+}
+
+function UpgradeDB() {
+	global $db;
+	if (!ConnectDB()) {
+		return;
+	}
+	try {
+		$db->exec("ALTER TABLE `users` ADD COLUMN `role` ENUM('user', 'admin') DEFAULT 'user' AFTER `password`");
+	} catch (Throwable $e) {}
+	try {
+		$db->exec("ALTER TABLE `fonts_meta` ADD COLUMN `status` ENUM('pending', 'approved', 'rejected') DEFAULT 'approved' AFTER `fontsize`");
+	} catch (Throwable $e) {}
 }
 ?>

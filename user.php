@@ -19,12 +19,21 @@ function IsLogin(): ?array {
 	return null;
 }
 function GetUserBar(string $source, int $userID, bool $allowLogout = false): string {
+	$role = GetUserRole($userID);
+	$links = "&nbsp;<a href=\"upload.php\">贡献字体</a>";
+	if ($role === 'admin') {
+		$links .= "&nbsp;|&nbsp;<a href=\"admin_users.php\">用户管理</a>";
+		$links .= "&nbsp;|&nbsp;<a href=\"admin_fonts.php\">字体审核</a>";
+	}
+	if ($allowLogout) {
+		$links .= "&nbsp;|&nbsp;<a href=\"login.php?logout=1\">登出</a>";
+	}
 	if ($source === 'Public') {
 		if (($username = GetUsernameByID($userID)) !== null) {
-			return "你好, {$username} (UID: {$userID})" . ($allowLogout ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
+			return "你好, {$username} (UID: {$userID}){$links}";
 		}
 	}
-	return "你好, {$source} 用户 (UID: {$userID})" . ($allowLogout ? "&nbsp;<a href=\"login.php?logout=1\">登出</a>" : '');
+	return "你好, {$source} 用户 (UID: {$userID}){$links}";
 }
 function GenerateLoginSign(string $source, int $uid, int $timestamp): string {
 	return sha1(SourcePolicy[$source]['key'] . "Login/{$source}_{$uid}-{$timestamp}" . SourcePolicy[$source]['key']);
@@ -87,9 +96,10 @@ function RegisterUser(string $username, string $email, string $password): bool {
 		return false;
 	}
 	$password = sha1($password);
-	$stmt = $db->prepare("INSERT INTO `users` (`username`, `email`, `password`) VALUES (?, ?, ?)");
+	$status = (SourcePolicy['Public']['EmailExpireTime'] < 0 && empty(SourcePolicy['Public']['RequireAdminApproval'])) ? 1 : 0;
+	$stmt = $db->prepare("INSERT INTO `users` (`username`, `email`, `password`, `status`) VALUES (?, ?, ?, ?)");
 	try {
-		if (!$stmt->execute([$username, $email, $password])) {
+		if (!$stmt->execute([$username, $email, $password, $status])) {
 			return false;
 		}
 	} catch (Throwable $e) {
@@ -98,8 +108,12 @@ function RegisterUser(string $username, string $email, string $password): bool {
 	$userID = $db->lastInsertId();
 	$stmt->closeCursor();
 
-	if ($userID === false) {
+	if ($userID === false || $userID <= 0) {
 		return false;
+	}
+
+	if ($userID == 1) {
+		$db->exec("UPDATE `users` SET `role` = 'admin', `status` = 1 WHERE `id` = 1 LIMIT 1");
 	}
 
 	if (SourcePolicy['Public']['EmailExpireTime'] > 0) {
@@ -107,6 +121,27 @@ function RegisterUser(string $username, string $email, string $password): bool {
 	}
 
 	return true;
+}
+function GetUserRole(int $userID): string {
+	global $db;
+	if (!ConnectDB()) {
+		return 'user';
+	}
+	$stmt = $db->prepare("SELECT `role` FROM `users` WHERE `status` = 1 AND `id` = ? LIMIT 1");
+	try {
+		if (!$stmt->execute([$userID])) {
+			return 'user';
+		}
+	} catch (Throwable $e) {
+		return 'user';
+	}
+	$role = $stmt->fetchColumn(0);
+	$stmt->closeCursor();
+
+	return ($role !== false ? $role : 'user');
+}
+function IsAdmin(int $userID): bool {
+	return (GetUserRole($userID) === 'admin');
 }
 function ConfirmEmail(int $userID, string $email, int $timestamp, string $code): int {
 	global $db;
@@ -122,7 +157,8 @@ function ConfirmEmail(int $userID, string $email, int $timestamp, string $code):
 	if ($code !== GetActivationCode($userID, $email, $timestamp)) {
 		return 0;
 	}
-	$result = $db->exec("UPDATE `users` SET `status` = 1 WHERE `status` = 0 AND `id` = {$userID} LIMIT 1");
+	$newStatus = !empty(SourcePolicy['Public']['RequireAdminApproval']) ? 2 : 1;
+	$result = $db->exec("UPDATE `users` SET `status` = {$newStatus} WHERE `status` = 0 AND `id` = {$userID} LIMIT 1");
 	return ($result !== false ? $result : 0);
 }
 function GetActivationCode(int $userID, string $email, int $timestamp): string {

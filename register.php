@@ -11,7 +11,13 @@ if (!empty($_POST['username']) && !empty($_POST['email']) && !empty($_POST['pass
 	if (!RegisterUser($_POST['username'], $_POST['email'], $_POST['password'])) {
 		dieHTML("注册失败!", 'Register');
 	}
-	dieHTML("注册成功! 最后一步: 请查收邮箱中的确认邮件.", 'Register');
+	if (SourcePolicy['Public']['EmailExpireTime'] > 0) {
+		dieHTML("注册成功! 请查收邮箱中的确认邮件.", 'Register');
+	} else if (SourcePolicy['Public']['EmailExpireTime'] == 0 || !empty(SourcePolicy['Public']['RequireAdminApproval'])) {
+		dieHTML("注册成功! 请等待管理员审批.", 'Register');
+	} else {
+		dieHTML("注册成功! 请直接<a href=\"login.php\">登录</a>.", 'Register');
+	}
 }
 HTMLStart('Register');
 echo <<<html

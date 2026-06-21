@@ -16,7 +16,7 @@ echo <<<html
 			<form role="serach" method="POST">
 				<label for="fontname">通过字体名搜索字体:</label>
 				<br>
-				<input type="text" id="fontname" name="fontname" minlength="{$minSearchLength}" value="{$fontnameEscaped}" />
+				<input type="text" id="fontname" name="fontname" maxlength="60" value="{$fontnameEscaped}" />
 				<button type="submit">搜索</button>
 			</form>
 		</div>

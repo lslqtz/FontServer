@@ -19,6 +19,7 @@ define('MaxParallels', 2);
 define('LoginExpireTime', 3600);
 define('DownloadExpireTime', 300);
 define('FontPath', array('font'));
+define('FontPendingPath', array('font_pending'));
 define('SysCacheDir', sys_get_temp_dir());
 define('LanguageID', [1028, 1033, 1041, 1152, 2052, 2057, 3076, 4100, 5124]);
 define('SourcePolicy', array(
@@ -39,6 +40,7 @@ define('SourcePolicy', array(
 		'MinSearchLength' => 2,
 		'MaxSearchFontCount' => 100,
 		'EmailExpireTime' => 0, // 0: Manual approval.
+		'RequireAdminApproval' => false,
 		'PublicUID' => 10000000 // 0: Disable public.
 	),
 	'FontServer' => array(
@@ -61,6 +63,9 @@ define('SourcePolicy', array(
 
 function GetMainFontPath(string $fontfile): string {
 	return FontPath[0] . "/{$fontfile}";
+}
+function GetPendingFontPath(string $fontfile): string {
+	return FontPendingPath[0] . "/{$fontfile}";
 }
 function GetFontPath(string $fontfile): ?string {
 	foreach (FontPath as &$fontPath) {

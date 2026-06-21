@@ -86,7 +86,7 @@ function ParseFontByFile(string $fontPath): array {
 
 	return [0, '', $fontsInfoArr];
 }
-function AddFontFile(string $fontPath, bool $localScraper = false): array {
+function AddFontFile(string $fontPath, bool $localScraper = false, int $uploader_id = 1, string $status = 'approved', string $originalFilename = ''): array {
 	$additionalMsgList = [];
 	if (!is_file($fontPath)) {
 		return [-1, '跳过错误文件', $additionalMsgList];
@@ -115,7 +115,12 @@ function AddFontFile(string $fontPath, bool $localScraper = false): array {
 		$fontExt = 'ttf';
 		$fontPath = ($fontFileInfo['dirname'] . '/' . $fontFileInfo['filename'] . ".ttf");
 	}
-	$fontFilename = preg_replace('/\d{10,}/', '', $fontFileInfo['filename']);
+	if ($originalFilename !== '') {
+		$originalFilenameInfo = pathinfo($originalFilename);
+		$fontFilename = $originalFilenameInfo['filename'];
+	} else {
+		$fontFilename = preg_replace('/\d{10,}/', '', $fontFileInfo['filename']);
+	}
 	$fontsInfoArr = [];
 	list($fontParseErr, $fontParseErrMsg, $fontsInfoArr) = ParseFontByFile($fontPath);
 	if ($fontParseErr < 0) {
@@ -125,12 +130,15 @@ function AddFontFile(string $fontPath, bool $localScraper = false): array {
 	foreach ($fontsInfoArr as $key => &$fontsInfo) {
 		$fontArr = DetectDuplicateFont($fontExt, $fontsInfo[0], $fontsInfo[1], $fontsInfo[3], true);
 		if ($fontArr[0] > 0) {
-			//if (preg_replace('/\d{10,}/', '', strtolower($fontArr[1])) === strtolower("{$fontFilename}.{$fontExt}")) {
-			$hasDupe = true;
-			$additionalMsgList[] = [-1, "跳过重复字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}"];
-			unset($fontsInfoArr[$key]);
-			continue;
-			//}
+			if ($status === 'pending') {
+				$additionalMsgList[] = [0, "发现重复字体 (待审核): {$fontsInfo[0]}"];
+				$hasDupe = true;
+			} else {
+				$hasDupe = true;
+				$additionalMsgList[] = [-1, "跳过重复字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]}"];
+				unset($fontsInfoArr[$key]);
+				continue;
+			}
 		} else if ($fontArr[0] < 0) {
 			$additionalMsgList[] = [-1, "跳过错误字体: {$fontsInfo[0]}, {$fontsInfo[1]}, {$fontsInfo[2]}, {$fontsInfo[3]} (Errno: {$fontArr[0]}"];
 			unset($fontsInfoArr[$key]);
@@ -139,16 +147,32 @@ function AddFontFile(string $fontPath, bool $localScraper = false): array {
 	if (count($fontsInfoArr) <= 0) {
 		return [-1, "跳过空字体", $additionalMsgList];
 	}
-	if ($hasDupe) {
-		$fontFilename .= time();
+	
+	$baseFilename = $fontFilename;
+	$counter = 1;
+	while (true) {
+		$testName = $fontFilename . ".{$fontExt}";
+		$testPath1 = GetMainFontPath($testName);
+		$testPath2 = GetPendingFontPath($testName);
+		if (!is_file($testPath1) && !is_file($testPath2)) {
+			break;
+		}
+		$fontFilename = $baseFilename . "_" . $counter;
+		$counter++;
 	}
+
 	$fontFilename .= ".{$fontExt}";
-	$newFontPath = GetMainFontPath($fontFilename);
+	$newFontPath = ($status === 'pending') ? GetPendingFontPath($fontFilename) : GetMainFontPath($fontFilename);
+
+	if ($status === 'pending' && !is_dir(FontPendingPath[0])) {
+		mkdir(FontPendingPath[0], 0777, true);
+	}
+
 	if (!rename($fontPath, $newFontPath)) {
 		return [-1, "移动字体失败: {$fontPath} -> {$newFontPath}", $additionalMsgList];
 	}
 	$additionalMsgList[] = [0, "移动字体成功: {$fontPath} -> {$newFontPath}"];
-	$rowID = AddFontMeta(1, $fontFilename, $fileSize, true);
+	$rowID = AddFontMeta($uploader_id, $fontFilename, $fileSize, true, $status);
 	if ($rowID <= 0) {
 		if ($localScraper) {
 			unlink($newFontPath);
